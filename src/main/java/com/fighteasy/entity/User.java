@@ -35,9 +35,11 @@ public class User implements UserDetails {
     private String phone;
     private String avatarUrl;
 
+    @Builder.Default
     @Column(name = "role")
     private String role = "ROLE_USER";
 
+    @Builder.Default
     private String provider = "LOCAL";
     private String providerId;
     private boolean isActive = true;

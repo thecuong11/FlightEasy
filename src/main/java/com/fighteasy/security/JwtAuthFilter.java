@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
+        System.out.println("filter");
         String token = authHeader.substring(7);
         String email = jwtService.extractEmail(token);
 
@@ -54,8 +54,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String requestPath = request.getServletPath();
-        return Arrays.stream(SecurityConfig.WHILE_LIST_API)
-                .anyMatch(patern -> pathMatcher.match(patern, requestPath));
+        System.out.println(requestPath);
+        return Arrays.stream(SecurityConfig.WHITE_LIST_API)
+                .anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
     }
 
 }

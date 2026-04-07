@@ -30,16 +30,16 @@ public class GlobalExceptionHandler {
                 .body(Map.of("code", "ACCOUNT_LOCKED", "message", ex.getMessage()));
     }
 
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<?> handleInvalidToken(InvalidTokenException ex){
+    @ExceptionHandler({InvalidTokenException.class, TokenExpiredException.class})
+    public ResponseEntity<?> handleInvalidToken(RuntimeException ex){
         return ResponseEntity.status(401)
-                .body(Map.of("code", "TOKEN_INVALID", "message", ex.getMessage()));
+                .body(Map.of("code", "INVALID_TOKEN", "message", ex.getMessage()));
     }
 
     @ExceptionHandler(TokenReuseException.class)
     public ResponseEntity<?> handleTokenReuse(TokenReuseException ex){
         return ResponseEntity.status(401)
-                .body(Map.of("code", "REFRESH_TOKEN_REUSE"));
+                .body(Map.of("code", "REFRESH_TOKEN_REUSE", "message", ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

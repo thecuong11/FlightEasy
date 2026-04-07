@@ -19,8 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    public static String[] WHILE_LIST_API = {
-            "api/v1/auth/**"
+    public static String[] WHITE_LIST_API = {
+            "/api/v1/auth/**"
     };
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -44,7 +44,7 @@ public class SecurityConfig {
         );
 
         http.authorizeHttpRequests(request -> request
-                .requestMatchers(WHILE_LIST_API).permitAll()
+                .requestMatchers(WHITE_LIST_API).permitAll()
                 .anyRequest().authenticated()
         );
 

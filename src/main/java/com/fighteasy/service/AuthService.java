@@ -33,9 +33,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-
-    private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int LOCK_DURATION_MINUTES = 30;
+    private final UserAttemptService userAttemptService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Transactional
@@ -64,11 +62,7 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(req.password(), user.getPassword())) {
-            user.setFailedAttempts(user.getFailedAttempts() + 1);
-            if (user.getFailedAttempts() >= MAX_FAILED_ATTEMPTS) {
-                user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
-            }
-            userRepository.save(user);
+            userAttemptService.updateFailedAttempts(user);
             throw new InvalidCredentialsException("Email hoặc mật khẩu không đúng");
         }
 
