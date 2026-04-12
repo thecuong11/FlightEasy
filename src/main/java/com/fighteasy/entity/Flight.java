@@ -1,5 +1,6 @@
 package com.fighteasy.entity;
 
+import com.fighteasy.enums.FlightStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,7 +38,7 @@ public class Flight {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "origin_id", nullable = false)
-    private Airport airport;
+    private Airport origin;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "destination_id", nullable = false)
@@ -60,15 +61,11 @@ public class Flight {
     private String gate;
 
     @OneToMany(mappedBy = "flight", cascade = CascadeType.ALL)
-    private List<FlightClass> flightClass = new ArrayList<>();
+    private List<FlightClass> flightClasses = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    public enum FlightStatus {
-        SCHEDULED, DELAYED, BOARDING, DEPARTED, ARRIVED, CANCELLED
-    }
 }

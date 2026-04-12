@@ -1,6 +1,7 @@
 package com.fighteasy.exception.handler;
 
 import com.fighteasy.exception.custom.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,4 +52,21 @@ public class GlobalExceptionHandler {
                 .body(Map.of("code", "VALIDATION", "errors", errors));
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<?> handleNotFound(NotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("code", "NOT_FOUND", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler({InvalidFlightException.class, InvalidStatusTransittionException.class})
+    public ResponseEntity<?> handleFlightException(RuntimeException ex) {
+        return ResponseEntity.status(400)
+                .body(Map.of("code", "INVALID_LIGHT", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateException.class)
+    public ResponseEntity<?> handleDuplicate(DuplicateException ex){
+        return ResponseEntity.status(409)
+                .body(Map.of("code", "DUPLICATE", "message", ex.getMessage()));
+    }
 }
