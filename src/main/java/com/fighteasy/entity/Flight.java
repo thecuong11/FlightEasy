@@ -60,6 +60,7 @@ public class Flight {
     private String terminal;
     private String gate;
 
+    @Builder.Default
     @OneToMany(mappedBy = "flight", cascade = CascadeType.ALL)
     private List<FlightClass> flightClasses = new ArrayList<>();
 

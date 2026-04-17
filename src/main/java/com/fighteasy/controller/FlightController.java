@@ -34,7 +34,7 @@ public class FlightController {
         return ResponseEntity.ok(flightService.getFlightById(id));
     }
 
-    @PostMapping("/api/v1/admin/flights")
+    @PostMapping("/api/v1/admin/airports")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Airport> createAirport(@Valid @RequestBody Airport airport){
         return ResponseEntity.status(201).body(flightService.createAirport(airport));
