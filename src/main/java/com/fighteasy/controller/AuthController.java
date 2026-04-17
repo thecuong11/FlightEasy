@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req, HttpServletResponse response) {
-        return ResponseEntity.status(201).body(authService.register(req, response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(req, response));
     }
 
     @PostMapping("/login")
@@ -44,7 +45,7 @@ public class AuthController {
     @PostMapping("/logout-all")
     public ResponseEntity<?> logoutAll(@AuthenticationPrincipal User user, HttpServletResponse response) {
         authService.logoutAll(user, response);
-        return ResponseEntity.ok(Map.of("message", "Đã đăng xuất khỏi tất cả thiê bị"));
+        return ResponseEntity.ok(Map.of("message", "Đã đăng xuất khỏi tất cả thiết bị"));
     }
 
     @PostMapping("/forgot-password")

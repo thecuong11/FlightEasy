@@ -7,6 +7,7 @@ import com.fighteasy.entity.Airport;
 import com.fighteasy.service.FlightService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -37,13 +38,13 @@ public class FlightController {
     @PostMapping("/api/v1/admin/airports")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Airport> createAirport(@Valid @RequestBody Airport airport){
-        return ResponseEntity.status(201).body(flightService.createAirport(airport));
+        return ResponseEntity.status(HttpStatus.CREATED).body(flightService.createAirport(airport));
     }
 
     @PostMapping("/api/v1/admin/flights")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<FlightResponse> createFlight(@Valid @RequestBody CreateFlightRequest request){
-        return ResponseEntity.status(201).body(flightService.createFlight(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(flightService.createFlight(request));
     }
 
     @PatchMapping("/api/v1/admin/flights/{id}/status")
