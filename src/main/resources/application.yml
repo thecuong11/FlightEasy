@@ -12,6 +12,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
 app:
   jwt:
     secret: MySuperSecretKey1234567890123456gkdfkgjfkdjgkdfjgdfkgfdkjgkfdjkgjkfdjgkdfjgk
