@@ -23,7 +23,7 @@ public class FlightSearchController {
         return ResponseEntity.ok(searchService.search(request));
     }
 
-    @GetMapping("/saerch/round-trip")
+    @GetMapping("/search/round-trip")
     public ResponseEntity<RoundTripSearchResponse> searchRoundTrip(@Valid FlightSearchRequest request){
         return ResponseEntity.ok(searchService.searchRoundTrip(request));
     }

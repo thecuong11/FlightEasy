@@ -18,6 +18,10 @@ spring:
       port: 6379
       timeout: 2000ms
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
 app:
   jwt:
     secret: MySuperSecretKey1234567890123456gkdfkgjfkdjgkdfjgdfkgfdkjgkfdjkgjkfdjgkdfjgk

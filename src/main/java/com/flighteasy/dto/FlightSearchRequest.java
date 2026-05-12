@@ -3,10 +3,8 @@ package com.flighteasy.dto;
 import com.flighteasy.enums.ClassType;
 import com.flighteasy.enums.SortBy;
 import com.flighteasy.enums.TimeRange;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,7 +12,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-@Builder
 public class FlightSearchRequest {
 
     @NotBlank
@@ -24,12 +21,9 @@ public class FlightSearchRequest {
     @NotNull
     private LocalDate departDate;
 
-    @Min(1)
-    private int adults = 1;
-    @Min(0)
-    private int children = 0;
-    @Min(0)
-    private int infants = 0;
+    private Integer adults = 1;
+    private Integer children = 0;
+    private Integer infants = 0;
 
     private LocalDate returnDate;
     private ClassType classType = ClassType.ECONOMY;
@@ -41,8 +35,16 @@ public class FlightSearchRequest {
     private TimeRange departTimeRange;
 
     private SortBy sortBy = SortBy.PRICE_ASC;
-    private int page = 0;
-    private int size = 20;
+    private Integer page = 0;
+    private Integer size = 20;
+
+    public int getAdults() { return adults != null ? adults : 1; }
+    public int getChildren() { return children != null ? children : 0; }
+    public int getInfants() { return infants != null ? infants : 0; }
+    public int getPage() { return  page != null ? page : 0; }
+    public int getSize() { return size != null ? Math.min(size, 50) : 20; }
+    public SortBy getSortBy() { return sortBy != null ? sortBy : SortBy.PRICE_ASC; }
+    public ClassType getClassType() { return classType != null ? classType : ClassType.ECONOMY; }
 
     public int getTotalPassengers() {return adults + children;}
 }

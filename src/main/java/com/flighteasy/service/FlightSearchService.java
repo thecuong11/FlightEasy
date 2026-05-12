@@ -81,16 +81,15 @@ public class FlightSearchService {
             throw new InvalidSearchException("Vui lòng cung cấp ngày về cho chuyến khứ hồi");
         }
 
-        FlightSearchRequest returnRequest = FlightSearchRequest.builder()
-                .from(request.getTo())
-                .to(request.getFrom())
-                .departDate(request.getReturnDate())
-                .adults(request.getAdults())
-                .children(request.getChildren())
-                .infants(request.getInfants())
-                .classType(request.getClassType())
-                .sortBy(request.getSortBy())
-                .build();
+        FlightSearchRequest returnRequest = new FlightSearchRequest();
+        returnRequest.setFrom(request.getTo());
+        returnRequest.setTo(request.getFrom());
+        returnRequest.setDepartDate(request.getReturnDate());
+        returnRequest.setAdults(request.getAdults());
+        returnRequest.setChildren(request.getChildren());
+        returnRequest.setInfants(request.getInfants());
+        returnRequest.setClassType(request.getClassType());
+        returnRequest.setSortBy(request.getSortBy());
 
         CompletableFuture<FlightSearchResponse> outboundFuture = CompletableFuture.supplyAsync(() -> search(request));
         CompletableFuture<FlightSearchResponse> returnFuture = CompletableFuture.supplyAsync(() -> search(returnRequest));
