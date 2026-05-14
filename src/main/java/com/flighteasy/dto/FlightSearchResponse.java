@@ -23,4 +23,12 @@ public record FlightSearchResponse(SearchMeta meta, List<FlightSearchResult> fli
     public record AvailableFilters(List<String> airlines, DurationRange durationRange ){}
 
     public record DurationRange(int min, int max){}
+
+    public record RoundTripSearchResponse(FlightSearchResponse outbound, FlightSearchResponse returnTrip, FlightPair cheapestCombination) {
+        public record FlightPair(
+                FlightSearchResult outboundFlight,
+                FlightSearchResult returnFlight,
+                BigDecimal totalCombinedPrice
+        ) {}
+    }
 }

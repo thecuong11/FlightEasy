@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
 public class FlightSearchResult {
 
     private Long id;
@@ -41,11 +38,9 @@ public class FlightSearchResult {
 
     private BigDecimal pricePerPerson;
     private BigDecimal totalPrice;
-
     private Integer availableSeats;
     private Integer baggageAllowanceKg;
     private Boolean isRefundable;
-
     private String status;
     private List<String> tags = new ArrayList<>();
 
@@ -77,5 +72,9 @@ public class FlightSearchResult {
 
     public void addTag(String tag){
         this.tags.add(tag);
+    }
+
+    public FlightSearchResult() {
+        this.tags = new ArrayList<>();
     }
 }

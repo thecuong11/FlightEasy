@@ -1,5 +1,6 @@
 package com.flighteasy.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flighteasy.dto.FlightSearchRequest;
 import com.flighteasy.dto.FlightSearchResponse;
 import com.flighteasy.dto.FlightSearchResult;
@@ -11,6 +12,7 @@ import com.flighteasy.repository.FlightRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,11 +31,11 @@ import java.util.stream.Collectors;
 public class FlightSearchService {
 
     private final FlightRepository flightRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
 
-    @SuppressWarnings("unchecked")
     public FlightSearchResponse search(FlightSearchRequest request){
         if (!request.getDepartDate().isAfter(LocalDate.now())){
             throw new InvalidSearchException("Ngày tìm kiếm phải từ ngày mai trở đi");
@@ -45,13 +47,15 @@ public class FlightSearchService {
 
         String cacheKey = buildCacheKey(request);
 
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        String cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached != null){
-            log.debug("Cache HIT: {}",cacheKey);
-            return (FlightSearchResponse) cached;
+            try {
+                log.debug("Cache HIT: {}",cacheKey);
+                return objectMapper.readValue(cached, FlightSearchResponse.class);
+            } catch (Exception e) {
+                log.warn("Cache deserialize failed, query DB: {}", e.getMessage());
+            }
         }
-
-        log.debug("Cache MISS: {}", cacheKey);
 
         List<FlightSearchResult> results = flightRepository.searchFlights(
                 request.getFrom().toUpperCase(),
@@ -71,7 +75,15 @@ public class FlightSearchService {
 
         FlightSearchResponse response = buildResponse(results, request);
 
-        redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL);
+        try {
+            redisTemplate.opsForValue().set(
+                    cacheKey,
+                    objectMapper.writeValueAsString(response),
+                    CACHE_TTL
+            );
+        } catch (Exception e) {
+            log.warn("Cache save failed: {}", e.getMessage());
+        }
 
         return response;
     }

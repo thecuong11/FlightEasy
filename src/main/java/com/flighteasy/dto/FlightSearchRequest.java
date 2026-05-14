@@ -27,7 +27,6 @@ public class FlightSearchRequest {
 
     private LocalDate returnDate;
     private ClassType classType = ClassType.ECONOMY;
-
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
     private List<String> airlines;
@@ -46,5 +45,5 @@ public class FlightSearchRequest {
     public SortBy getSortBy() { return sortBy != null ? sortBy : SortBy.PRICE_ASC; }
     public ClassType getClassType() { return classType != null ? classType : ClassType.ECONOMY; }
 
-    public int getTotalPassengers() {return adults + children;}
+    public int getTotalPassengers() {return getAdults() + getChildren();}
 }

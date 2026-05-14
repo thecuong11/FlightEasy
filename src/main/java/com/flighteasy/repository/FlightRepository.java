@@ -15,8 +15,6 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
             "AND CAST(f.departureTime AS LocalDate) = :date AND f.id != :excludeId")
     boolean existsByFlightNumberAndDate(String flightNumber, LocalDate date, Long excludeId);
 
-    List<Flight> findByStatus(FlightStatus status);
-
     @Query("""
         SELECT new com.flighteasy.dto.FlightSearchResult(
                     f.id, f.flightNumber,
@@ -51,4 +49,10 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
             @Param("passengerCount")
             int passengerCount
     );
+
+    @Query("SELECT COUNT(f) FROM Flight f WHERE CAST(f.departureTime AS LOCALDATE ) = :date ")
+    long countByDepartureDate(@Param("date") LocalDate date);
+
+    @Query("SELECT COUNT(f) FROM Flight f WHERE f.status = :status AND CAST(f.departureTime AS LOCALDATE ) = :date ")
+    long countByStatusAndDepartureDate(@Param("status") FlightStatus status, @Param("date") LocalDate date);
 }
