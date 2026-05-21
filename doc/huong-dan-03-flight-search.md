@@ -11,7 +11,7 @@
 | Bước | Nội dung |
 |------|----------|
 | 1 | Cài đặt Redis |
-| 2 | Jackson Config — fix LocalDate serialize |
+| 2 | Jackson Config — expose ObjectMapper bean |
 | 3 | Enum |
 | 4 | DTO Request |
 | 5 | FlightSearchResult — Constructor cho JPQL |
@@ -52,34 +52,32 @@ spring:
 
 ### 1.3 RedisConfig
 
+**Tạo file mới:** `src/main/java/com/fighteasy/config/RedisConfig.java`
+
 ```java
 @Configuration
+@RequiredArgsConstructor  // inject ObjectMapper bean từ JacksonConfig
 public class RedisConfig {
+
+    private final ObjectMapper objectMapper;
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        // Lưu type info để deserialize đúng class khi đọc từ Redis
-        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator
-                .builder()
-                .allowIfBaseType(Object.class)
-                .build();
-        objectMapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
-
-        Jackson2JsonRedisSerializer<Object> serializer =
-                new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+        // GenericJackson2JsonRedisSerializer tự động lưu type info ("@class")
+        // vào JSON → deserialize về đúng class mà không cần ép kiểu thủ công.
+        // Dùng objectMapper đã có JavaTimeModule từ JacksonConfig — nhất quán toàn app.
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(objectMapper);
 
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setHashValueSerializer(serializer);
 
+        template.afterPropertiesSet();
         return template;
     }
 
@@ -95,9 +93,21 @@ public class RedisConfig {
 }
 ```
 
+> **Tại sao dùng `GenericJackson2JsonRedisSerializer` thay vì `Jackson2JsonRedisSerializer<Object>`?**
+>
+> `Jackson2JsonRedisSerializer<Object>` không lưu type info vào JSON. Khi đọc ra,
+> Jackson không biết phải deserialize về class nào → trả về `LinkedHashMap` thay vì
+> `FlightSearchResponse` → cast exception khi dùng.
+>
+> `GenericJackson2JsonRedisSerializer` tự ghi thêm field `"@class"` vào JSON khi lưu:
+> ```json
+> { "@class": "com.fighteasy.dto.FlightSearchResponse", "meta": { ... }, ... }
+> ```
+> Khi đọc ra, Jackson đọc `"@class"` và deserialize đúng về `FlightSearchResponse` tự động.
+
 ---
 
-## Bước 2 — JacksonConfig (fix LocalDate trong HTTP response)
+## Bước 2 — JacksonConfig
 
 **Tạo file mới:** `src/main/java/com/fighteasy/config/JacksonConfig.java`
 
@@ -105,30 +115,30 @@ public class RedisConfig {
 @Configuration
 public class JacksonConfig {
 
+    // Expose ObjectMapper bean — RedisConfig sẽ inject bean này.
+    // Dùng chung một ObjectMapper duy nhất → cấu hình nhất quán toàn app.
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
-        return builder -> {
-            builder.modules(new JavaTimeModule());
-            builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        };
+    @Primary
+    public ObjectMapper objectMapper() {
+        return Jackson2ObjectMapperBuilder.json()
+                .modules(new JavaTimeModule())
+                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .build();
     }
 }
 ```
 
-> **Quan trọng:** Với Java Record, Jackson config không tự apply vào field.
-> Phải thêm annotation trực tiếp vào từng field `LocalDate` / `LocalDateTime` trong Record:
+> **Tại sao dùng `@Bean ObjectMapper` thay vì `Jackson2ObjectMapperBuilderCustomizer`?**
 >
-> ```java
-> // LocalDate
-> @JsonSerialize(using = LocalDateSerializer.class)
-> @JsonDeserialize(using = LocalDateDeserializer.class)
-> LocalDate departDate
+> `Jackson2ObjectMapperBuilderCustomizer` chỉ tùy biến ObjectMapper mà Spring MVC dùng
+> cho HTTP response — không tạo ra một bean `ObjectMapper` có thể inject vào chỗ khác.
 >
-> // LocalDateTime
-> @JsonSerialize(using = LocalDateTimeSerializer.class)
-> @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-> LocalDateTime departureTime
-> ```
+> Nếu `RedisConfig` tự tạo `new ObjectMapper()` riêng thì:
+> - ObjectMapper đó **không có** `JavaTimeModule` → phải thêm `@JsonSerialize`/`@JsonDeserialize` trên từng field để bù đắp.
+> - Có hai ObjectMapper khác cấu hình nhau trong cùng app → dễ sinh bug khó tìm.
+>
+> Expose `@Bean ObjectMapper` → mọi nơi inject cùng một instance đã cấu hình đầy đủ.
+> `@JsonSerialize`/`@JsonDeserialize` trên entity **không còn cần thiết nữa**.
 
 ---
 
@@ -240,12 +250,9 @@ public class FlightSearchResult {
     private String destinationName;
     private String destinationCity;
 
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    // Không cần @JsonSerialize/@JsonDeserialize —
+    // ObjectMapper đã có JavaTimeModule xử lý LocalDateTime tự động.
     private LocalDateTime departureTime;
-
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime arrivalTime;
 
     private Integer    durationMinutes;
@@ -311,11 +318,11 @@ public record FlightSearchResponse(
     PriceRange priceRange,
     AvailableFilters availableFilters
 ) {
+    // Không cần @JsonSerialize/@JsonDeserialize —
+    // ObjectMapper bean đã có JavaTimeModule xử lý LocalDate tự động.
     public record SearchMeta(
         String from,
         String to,
-        @JsonSerialize(using = LocalDateSerializer.class)
-        @JsonDeserialize(using = LocalDateDeserializer.class)
         LocalDate departDate,
         int adults,
         int children,
@@ -703,6 +710,6 @@ public ResponseEntity<?> handleInvalidSearch(InvalidSearchException ex) {
 - **Redis** phải chạy trước khi test: `docker run -d -p 6379:6379 redis`
 - **`@ModelAttribute`** trên Controller — dùng thay vì `@RequestBody` với GET request
 - **Constructor tay 19 tham số** trong `FlightSearchResult` — không được thay bằng `@AllArgsConstructor`
-- **`@JsonSerialize/@JsonDeserialize`** phải thêm trực tiếp vào field trong Record — Jackson global config không tự apply
+- **`@JsonSerialize/@JsonDeserialize` không cần thiết** — `ObjectMapper` bean đã có `JavaTimeModule`, mọi field `LocalDate`/`LocalDateTime` được xử lý tự động cả trong HTTP response lẫn Redis
 - **Paging** thực hiện sau filter + sort để đảm bảo kết quả đúng
 - **Cache key** bao gồm tất cả params — filter khác nhau sẽ có key khác nhau, không bị lẫn cache
