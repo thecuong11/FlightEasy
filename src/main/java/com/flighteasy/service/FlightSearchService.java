@@ -49,7 +49,7 @@ public class FlightSearchService {
         String cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached != null){
             try {
-                log.debug("Cache HIT: {}",cacheKey);
+                log.info("Cache HIT: {}",cacheKey);
                 return objectMapper.readValue(cached, FlightSearchResponse.class);
             } catch (Exception e) {
                 log.warn("Cache deserialize failed, query DB: {}", e.getMessage());
