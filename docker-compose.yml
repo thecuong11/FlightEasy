@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: fighteasy
+      POSTGRES_DB: flighteasy
       TZ: UTC
       PGTZ: UTC
     ports:

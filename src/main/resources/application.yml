@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/fighteasy
+    url: jdbc:postgresql://localhost:5432/flighteasy
     username: postgres
     password: admin
 
