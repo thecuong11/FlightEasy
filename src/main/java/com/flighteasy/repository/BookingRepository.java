@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByPnrCode(String pnrCode);
+    boolean existsByPnrCode(String pnrCode);
 
     @Query("SELECT b FROM Booking b WHERE b.status = 'PENDING' AND b.expiresAt < :now")
     List<Booking> findExpiredPending(@Param("now")LocalDateTime now);

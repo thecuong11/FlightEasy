@@ -59,7 +59,7 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
     @Builder.Default
-    private List<BookingSegment> bookingSegments = new ArrayList<>();
+    private List<BookingSegment> segments = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
