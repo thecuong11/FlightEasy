@@ -130,6 +130,16 @@ public class BookingService {
     }
 
     @Transactional
+    public void expireBooking(Booking booking) {
+        booking.setStatus(BookingStatus.EXPIRED);
+        bookingRepository.save(booking);
+
+        releaseSeatsForBooking(booking);
+
+        log.info("Booking {} expired and seats released", booking.getPnrCode());
+    }
+
+    @Transactional
     public CancelBookingResponse cancelBooking(String pnrCode, Long userId) {
         Booking booking = bookingRepository.findByPnrCode(pnrCode)
                 .orElseThrow(() -> new NotFoundException("Booking không tồn tại: " + pnrCode));

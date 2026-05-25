@@ -27,7 +27,7 @@ public class BookingExpiryScheduler {
             log.info("Found {} expired booking to cancel", expired.size());
             expired.forEach(booking -> {
                 try {
-
+                    bookingService.expireBooking(booking);
                 } catch (Exception ex) {
                     log.error("Failed to expire booking {}: {}", booking.getPnrCode(), ex.getMessage());
                 }
