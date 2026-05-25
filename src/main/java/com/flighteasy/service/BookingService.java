@@ -135,7 +135,7 @@ public class BookingService {
                 .orElseThrow(() -> new NotFoundException("Booking không tồn tại: " + pnrCode));
 
         if (!booking.getUser().getId().equals(userId)) {
-            throw new ForbiddenException("Bnạ không có quyền hủy booking này");
+            throw new ForbiddenException("Bạn không có quyền hủy booking này");
         }
 
         if (booking.getStatus() != BookingStatus.CONFIRMED) {

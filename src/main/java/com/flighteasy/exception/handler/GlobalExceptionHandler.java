@@ -93,4 +93,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("code", "NOT_ENOUGH_SEAT", "message", ex.getMessage()));
     }
+
+    @ExceptionHandler(InvalidBookingException.class)
+    public ResponseEntity<?> handleInvalidBooking(InvalidBookingException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", "BOOKING_STATUS_INVALID", "message", ex.getMessage()));
+    }
 }
