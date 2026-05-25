@@ -75,4 +75,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("code", "INVALID_SEARCH", "message", ex.getMessage()));
     }
+
+    @ExceptionHandler(SeatUnavailableException.class)
+    public ResponseEntity<?> handleSeatUnavailable(SeatUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", "SEAT_UNAVAILABLE", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicatePassengerException.class)
+    public ResponseEntity<?> handleDuplicatePassenger(DuplicatePassengerException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", "DUPLICATE_PASSENGER", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(NotEnoughSeatsException.class)
+    public ResponseEntity<?> handleNotEnoughSeat(NotEnoughSeatsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("code", "NOT_ENOUGH_SEAT", "message", ex.getMessage()));
+    }
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 public record PassengerRequest(
         @NotBlank String firstName,
         @NotBlank String lastName,
-        @NotNull LocalDateTime dateOfBirth,
+        @NotNull LocalDate dateOfBirth,
         String gender,
         @NotBlank String nationality,
         @NotBlank String idType,

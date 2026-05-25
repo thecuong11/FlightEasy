@@ -33,7 +33,7 @@ public class Passenger {
     private String lastName;
 
     @Column(nullable = false)
-    private LocalDateTime dateOfBirth;
+    private LocalDate dateOfBirth;
 
     private String gender;
 
