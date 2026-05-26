@@ -22,7 +22,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     public static String[] WHITE_LIST_API = {
-            "/api/v1/auth/**"
+            "/api/v1/auth/**",
+            "/api/v1/payments/vnpay/ipn",
+            "/api/v1/payments/vnpay/return"
     };
 
     private final JwtAuthFilter jwtAuthFilter;

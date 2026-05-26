@@ -99,4 +99,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("code", "BOOKING_STATUS_INVALID", "message", ex.getMessage()));
     }
+
+    @ExceptionHandler(InvalidPaymentException.class)
+    public ResponseEntity<?> handleInvalidPayment(InvalidPaymentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("code", "INVALID_PAYMENT", "message", ex.getMessage()));
+    }
 }
