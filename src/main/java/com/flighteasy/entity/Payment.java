@@ -2,10 +2,7 @@ package com.flighteasy.entity;
 
 import com.flighteasy.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -49,10 +46,10 @@ public class Payment {
     private String vnpResponseCode;
     private String vnpSecureHash;
 
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "text")
     private String rawIpnData;
 
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "text")
     private String rawReturnData;
 
     private BigDecimal refundAmount;

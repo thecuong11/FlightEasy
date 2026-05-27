@@ -13,8 +13,27 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByPnrCode(String pnrCode);
     boolean existsByPnrCode(String pnrCode);
 
-    @Query("SELECT b FROM Booking b WHERE b.status = 'PENDING' AND b.expiresAt < :now")
+    @Query("""
+        SELECT DISTINCT b FROM Booking b 
+        LEFT JOIN FETCH b.segments s 
+        LEFT JOIN FETCH s.passengers p
+        LEFT JOIN FETCH p.seat
+        LEFT JOIN FETCH s.flightClass fc
+        LEFT JOIN FETCH fc.flight
+        WHERE b.status = 'PENDING'
+        AND b.expiresAt < :now
+        """)
     List<Booking> findExpiredPending(@Param("now")LocalDateTime now);
 
     List<Booking> findByUserIdOrderByCreatedAtDesc (Long userId);
+
+    @Query("""
+        SELECT DISTINCT b FROM Booking b
+        LEFT JOIN FETCH b.segments s
+        LEFT JOIN FETCH s.passengers p
+        LEFT JOIN FETCH p.seat
+        LEFT JOIN FETCH s.flightClass fc
+        WHERE b.id = :id
+""")
+    Optional<Booking> findByIdWithSegmentsAndPassengers(@Param("id") Long id);
 }

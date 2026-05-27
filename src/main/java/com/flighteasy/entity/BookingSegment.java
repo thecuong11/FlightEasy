@@ -1,16 +1,13 @@
 package com.flighteasy.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "booking_segments")
@@ -18,10 +15,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BookingSegment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,7 +36,7 @@ public class BookingSegment {
 
     @OneToMany(mappedBy = "bookingSegment", cascade = CascadeType.ALL)
     @Builder.Default
-    private List<Passenger> passengers = new ArrayList<>();
+    private Set<Passenger> passengers = new HashSet<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;

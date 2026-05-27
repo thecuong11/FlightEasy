@@ -58,7 +58,7 @@ public class VNPayService {
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
         params.put("vnp_ReturnUrl", returnUrl);
-        params.put("vnp_IpAddress", ipAddress != null ? ipAddress : "127.0.0.1");
+        params.put("vnp_IpAddr", ipAddress != null ? ipAddress : "127.0.0.1");
         params.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         params.put("vnp_ExpireDate", LocalDateTime.now().plusMinutes(15).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
 
@@ -66,8 +66,8 @@ public class VNPayService {
                 .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
 
-        String securityHash = hmacSha512(hashData, hashSecret);
-        params.put("vnp_SecurityHash", securityHash);
+        String securityHash = hmacSha512(hashSecret, hashData);
+        params.put("vnp_SecureHash", securityHash);
 
         String queryString = params.entrySet().stream()
                 .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
@@ -77,7 +77,7 @@ public class VNPayService {
     }
 
     public String processIPN(Map<String, String> params) {
-        String receiveHash = params.get("vnp_SecurityHash");
+        String receiveHash = params.get("vnp_SecureHash");
         String responseCode = params.get("vnp_ResponseCode");
         String txnRef = params.get("vnp_TxnRef");
         long amount = Long.parseLong(params.get("vnp_Amount"));
@@ -96,8 +96,8 @@ public class VNPayService {
             return buildIPNResponse("02", "Order already confirmed");
         }
 
-        if (payment.getAmountVnpay() != amount) {
-            log.error("IPN: Amount mismatch. Expected={}, Got={}", amount, payment.getAmountVnpay(), amount);
+        if (!payment.getAmountVnpay().equals(amount)) {
+            log.error("IPN: Amount mismatch. Expected={}, Got={}", payment.getAmountVnpay(), amount);
             return buildIPNResponse("04", "Invalid amount");
         }
 
@@ -124,11 +124,13 @@ public class VNPayService {
     }
 
     public boolean verifyReturnUrl(Map<String, String> params) {
-        String receivedHash = params.get("vnp_SecurityHash");
+        String receivedHash = params.get("vnp_SecureHash");
         return verifySignature(params, receivedHash);
     }
 
     private boolean verifySignature(Map<String, String> params, String receivedHash) {
+        log.info("=====hashSecret===== [{}]", hashSecret);
+        log.info("===receivedHash=== [{}]", receivedHash);
         String hashData = params.entrySet().stream()
                 .filter(e -> !e.getKey().equals("vnp_SecureHash") && !e.getKey().equals("vnp_SecureHashType"))
                 .sorted(Map.Entry.comparingByKey())
@@ -136,7 +138,11 @@ public class VNPayService {
                 .collect(Collectors.joining("&"));
 
         String expectedHash = hmacSha512(hashSecret, hashData);
-        return expectedHash.equalsIgnoreCase(receivedHash);
+        log.info("===expectedHash=== [{}]", expectedHash);
+        int diff = expectedHash.length() - receivedHash.length();
+        String paddedReceived = diff > 0 ? "0".repeat(diff) + receivedHash : receivedHash;
+
+        return expectedHash.equalsIgnoreCase(paddedReceived);
     }
 
     private String hmacSha512(String key, String data) {

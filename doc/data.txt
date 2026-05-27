@@ -21,6 +21,13 @@ INSERT INTO airports (iata_code, icao_code, name, city, country, country_code, t
 ('HPH', 'VVCI', 'Sân bay Quốc tế Cát Bi', 'Hải Phòng', 'Việt Nam', 'VN', 'Asia/Ho_Chi_Minh', 20.819386, 106.724989, true);
 
 
+Ngân hàng	        NCB
+Số thẻ	            9704198526191432198
+Tên chủ thẻ	        NGUYEN VAN A
+Ngày phát hành	    07/15
+Mật khẩu OTP	    123456
+
+
 http://localhost:8080/api/v1/admin/flights
 {
     "flightNumber": "VN123",
@@ -52,7 +59,14 @@ http://localhost:8080/api/v1/admin/flights
     ]
 }
 
+ALTER TABLE payments
+  ALTER COLUMN raw_ipn_data TYPE TEXT,
+  ALTER COLUMN raw_return_data TYPE TEXT;
 
+-- Module 07 cũng fix luôn
+ALTER TABLE admin_audit_logs
+  ALTER COLUMN old_value TYPE TEXT,
+  ALTER COLUMN new_value TYPE TEXT;
 
 
 File 04 — Booking:

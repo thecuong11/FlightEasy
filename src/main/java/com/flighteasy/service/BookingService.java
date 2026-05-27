@@ -124,19 +124,23 @@ public class BookingService {
         if (!booking.getUser().getId().equals(userId)) {
             throw new ForbiddenException("Bạn không có quyền xem booking này");
         }
-        FlightClass fc = booking.getSegments().get(0).getFlightClass();
-
+        FlightClass fc = booking.getSegments().stream().findFirst()
+                .orElseThrow(() -> new NotFoundException("Booking không có segment"))
+                .getFlightClass();
         return toBookingResponse(booking, fc, null);
     }
 
     @Transactional
     public void expireBooking(Booking booking) {
-        booking.setStatus(BookingStatus.EXPIRED);
-        bookingRepository.save(booking);
+        Booking fullBooking = bookingRepository.findByIdWithSegmentsAndPassengers(booking.getId())
+                        .orElseThrow(() -> new NotFoundException("Booking không tồn tại"));
 
-        releaseSeatsForBooking(booking);
+        fullBooking.setStatus(BookingStatus.EXPIRED);
+        bookingRepository.save(fullBooking);
 
-        log.info("Booking {} expired and seats released", booking.getPnrCode());
+        releaseSeatsForBooking(fullBooking);
+
+        log.info("Booking {} expired and seats released", fullBooking.getPnrCode());
     }
 
     @Transactional
@@ -165,7 +169,7 @@ public class BookingService {
     }
 
     private BigDecimal calculateRefund(Booking booking) {
-        LocalDateTime departureTime = booking.getSegments().get(0)
+        LocalDateTime departureTime = booking.getSegments().stream().findFirst().orElseThrow(() -> new NotFoundException("Booking không có segment"))
                 .getFlightClass().getFlight().getDepartureTime();
 
         long hoursUntilDeparture = Duration.between(LocalDateTime.now(), departureTime).toHours();
@@ -183,6 +187,8 @@ public class BookingService {
                 .filter(p -> p.getSeat() != null)
                 .map(p -> p.getSeat().getId())
                 .toList();
+
+        log.info("Releasing seats: {}", seatIds);
 
         if (!seatIds.isEmpty()) {
             seatRepository.releaseSeats(seatIds);
