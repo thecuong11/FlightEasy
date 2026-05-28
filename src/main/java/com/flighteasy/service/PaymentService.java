@@ -31,7 +31,7 @@ public class PaymentService {
     @Transactional
     public CreatePaymentResponse createPaymentLink(CreatePaymentRequest request, String clientIp) {
         Booking booking = bookingRepository.findByPnrCode(request.pnrCode())
-                .orElseThrow(() -> new RuntimeException("Booking không tồn tại"));
+                .orElseThrow(() -> new NotFoundException("Booking không tồn tại"));
 
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new InvalidPaymentException("Booking không ở trạng thái chờ thanh toán");
@@ -64,7 +64,7 @@ public class PaymentService {
                 .orElseThrow(() -> new NotFoundException("Booking không tồn tại"));
 
         Payment payment = paymentRepository.findLatestPaymentByBookingId(booking.getId())
-                .orElseThrow(() -> new NotFoundException("Chưa c giao dịch thanh toán"));
+                .orElseThrow(() -> new NotFoundException("Chưa có giao dịch thanh toán"));
 
         return new PaymentStatusResponse(
                 pnrCode, payment.getStatus().name(),

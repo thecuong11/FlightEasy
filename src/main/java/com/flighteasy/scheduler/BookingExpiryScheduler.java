@@ -5,6 +5,8 @@ import com.flighteasy.repository.BookingRepository;
 import com.flighteasy.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +22,11 @@ public class BookingExpiryScheduler {
     private final BookingService bookingService;
 
     @Scheduled(fixedDelay = 60_000)
+    @SchedulerLock(
+            name = "cancelExpiredBooking",
+            lockAtMostFor = "PT2M",
+            lockAtLeastFor = "PT30S"
+    )
     public void cancelExpiredBooking() {
         List<Booking> expired = bookingRepository.findExpiredPending(LocalDateTime.now());
 
@@ -28,6 +35,8 @@ public class BookingExpiryScheduler {
             expired.forEach(booking -> {
                 try {
                     bookingService.expireBooking(booking);
+                } catch (ObjectOptimisticLockingFailureException ex) {
+                    log.info("Booking {} was updated concurrently, skip expire", booking.getPnrCode());
                 } catch (Exception ex) {
                     log.error("Failed to expire booking {}: {}", booking.getPnrCode(), ex.getMessage());
                 }

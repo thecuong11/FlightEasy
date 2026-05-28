@@ -135,11 +135,20 @@ public class BookingService {
         Booking fullBooking = bookingRepository.findByIdWithSegmentsAndPassengers(booking.getId())
                         .orElseThrow(() -> new NotFoundException("Booking không tồn tại"));
 
+        if (fullBooking.getStatus() != BookingStatus.PENDING) {
+            log.info("Booking {} already {}, skip expire", fullBooking.getPnrCode(), booking.getStatus());
+            return;
+        }
+
+        if (fullBooking.getExpiresAt() == null || fullBooking.getExpiresAt().isAfter(LocalDateTime.now())) {
+            log.info("Booking {} not yet expires, skip", fullBooking.getPnrCode());
+            return;
+        }
+
         fullBooking.setStatus(BookingStatus.EXPIRED);
         bookingRepository.save(fullBooking);
 
         releaseSeatsForBooking(fullBooking);
-
         log.info("Booking {} expired and seats released", fullBooking.getPnrCode());
     }
 

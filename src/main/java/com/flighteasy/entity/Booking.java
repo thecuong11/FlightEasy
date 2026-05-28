@@ -65,4 +65,7 @@ public class Booking {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Version
+    private Long version;
+
 }

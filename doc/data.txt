@@ -69,6 +69,15 @@ ALTER TABLE admin_audit_logs
   ALTER COLUMN new_value TYPE TEXT;
 
 
+CREATE TABLE shedlock (
+    name        VARCHAR(64) NOT NULL,
+    lock_until  TIMESTAMP   NOT NULL,
+    locked_at   TIMESTAMP   NOT NULL,
+    locked_by   VARCHAR(255) NOT NULL,
+    PRIMARY KEY (name)
+);
+
+
 File 04 — Booking:
 
 Thêm @Builder.Default cho List trong entity Booking và BookingSegment
