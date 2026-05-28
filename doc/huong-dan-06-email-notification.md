@@ -13,12 +13,13 @@
 | 1 | Cài đặt dependency & cấu hình Gmail |
 | 2 | Database Schema & Entity |
 | 3 | AsyncConfig — Thread pool riêng cho email |
-| 4 | EmailService — Gửi email với Thymeleaf |
-| 5 | Event Listener — Lắng nghe sự kiện |
-| 6 | Retry Scheduler — Gửi lại email thất bại |
-| 7 | Check-in Reminder Scheduler |
-| 8 | Template HTML mẫu (Thymeleaf) |
-| 9 | Test |
+| 4 | ThymeleafConfig |
+| 5 | EmailService — Gửi email với Thymeleaf |
+| 6 | Event Listener — Lắng nghe sự kiện |
+| 7 | Retry Scheduler — Gửi lại email thất bại |
+| 8 | Check-in Reminder Scheduler |
+| 9 | Template HTML mẫu (Thymeleaf) |
+| 10 | Test |
 
 ---
 
@@ -26,8 +27,10 @@
 
 ### 1.1 Thêm dependency
 
+> ⚠️ **Spring Boot 3.x:** `thymeleaf-extras-java8time` đã được tích hợp sẵn vào Thymeleaf 3.1+, **không cần thêm nữa**.
+
 ```xml
-<!-- JavaMailSender -->
+<!-- Thymeleaf -->
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-thymeleaf</artifactId>
@@ -39,11 +42,7 @@
     <artifactId>spring-boot-starter-mail</artifactId>
 </dependency>
 
-<!-- Thymeleaf cho email template -->
-<dependency>
-    <groupId>org.thymeleaf.extras</groupId>
-    <artifactId>thymeleaf-extras-java8time</artifactId>
-</dependency>
+<!-- Context Support -->
 <dependency>
     <groupId>org.springframework</groupId>
     <artifactId>spring-context-support</artifactId>
@@ -181,6 +180,8 @@ public class AsyncConfig {
 
 ## Bước 4 — ThymeleafConfig
 
+> ⚠️ **Spring Boot 3.x:** Không dùng `Java8TimeDialect` — đã tích hợp sẵn, thêm vào sẽ gây lỗi `ClassNotFoundException`.
+
 ```java
 @Configuration
 public class ThymeleafEmailConfig {
@@ -189,7 +190,7 @@ public class ThymeleafEmailConfig {
     public SpringTemplateEngine emailTemplateEngine() {
         SpringTemplateEngine engine = new SpringTemplateEngine();
         engine.addTemplateResolver(emailTemplateResolver());
-        engine.addDialect(new Java8TimeDialect()); // Để dùng #temporals trong template
+        // KHÔNG thêm new Java8TimeDialect() — Spring Boot 3.x đã tích hợp sẵn
         return engine;
     }
 
@@ -217,9 +218,7 @@ public class ThymeleafEmailConfig {
 public class EmailService {
 
     private final JavaMailSender mailSender;
-
     private final SpringTemplateEngine templateEngine;  // Spring tự inject bean "emailTemplateEngine"
-
     private final EmailLogRepository emailLogRepository;
 
     @Value("${spring.mail.username}")
@@ -326,7 +325,6 @@ public class EmailService {
 
     public void sendEmail(String to, String subject, String templateName,
                           Context ctx, String referenceId) {
-        // Tạo log record
         EmailLog emailLog = EmailLog.builder()
                 .recipient(to)
                 .subject(subject)
@@ -342,7 +340,6 @@ public class EmailService {
 
     // Gọi khi retry (đã có log record rồi)
     public void retrySend(EmailLog emailLog) {
-        // Tái tạo context từ log — trong thực tế có thể lưu thêm data vào log
         Context ctx = new Context();
         doSend(emailLog, ctx, emailLog.getTemplateName());
     }
@@ -360,14 +357,12 @@ public class EmailService {
 
             mailSender.send(message);
 
-            // Cập nhật log: thành công
             emailLog.setStatus("SENT");
             emailLog.setSentAt(LocalDateTime.now());
             emailLog.setAttempts(emailLog.getAttempts() + 1);
             log.info("Email sent to {} (template={})", emailLog.getRecipient(), templateName);
 
         } catch (Exception e) {
-            // Cập nhật log: thất bại, lên lịch retry
             emailLog.setAttempts(emailLog.getAttempts() + 1);
             emailLog.setLastError(e.getMessage());
             log.error("Failed to send email to {}: {}", emailLog.getRecipient(), e.getMessage());
@@ -377,7 +372,6 @@ public class EmailService {
                 emailLog.setStatus("FAILED");
                 log.error("Email permanently failed after 3 attempts: {}", emailLog.getRecipient());
             } else {
-                // Còn retry — lên lịch lần tiếp theo
                 emailLog.setStatus("PENDING");
                 emailLog.setNextRetryAt(calculateNextRetry(emailLog.getAttempts()));
             }
@@ -467,13 +461,12 @@ public class BookingEventListener {
     @EventListener
     @Async("emailTaskExecutor")
     public void onFlightCancelled(FlightCancelledEvent event) {
-        // TODO: Lấy danh sách booking của chuyến bay bị hủy rồi gửi email
         log.info("Flight {} cancelled — sending notifications", event.getFlight().getFlightNumber());
     }
 }
 
 // ======================== EVENT CLASSES ========================
-// Tạo các file này trong package: com.fighteasy.event
+// Tạo các file này trong package: com.flighteasy.event
 
 public class BookingConfirmedEvent {
     private final Booking booking;
@@ -570,12 +563,13 @@ List<Booking> findConfirmedBookingsForCheckin(
 
 ## Bước 9 — Template HTML (Thymeleaf)
 
+> ⚠️ **Spring Boot 3.x:** Xóa `xmlns:th-java8time` — không cần thiết nữa. `#temporals` vẫn dùng bình thường.
+
 Tạo file tại: `src/main/resources/templates/emails/booking-confirmed.html`
 
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:th-java8time="http://www.thymeleaf.org/extras/java8time">
+<html xmlns:th="http://www.thymeleaf.org">
 <body style="font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; margin:0">
 <div style="max-width:600px; margin:0 auto; background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1)">
 
@@ -692,3 +686,14 @@ Mở `http://localhost:8025` để xem email.
 - `@EnableAsync` phải được đặt trong `AsyncConfig` hoặc main class
 - Với production: cân nhắc dùng **SendGrid** hoặc **AWS SES** thay Gmail (giới hạn 500 mail/ngày với Gmail)
 - Khi dùng `@Async` + `@EventListener` — Spring sẽ publish event trong transaction gốc rồi gửi email sau
+
+---
+
+## Tóm tắt thay đổi so với bản gốc (Spring Boot 3.x)
+
+| # | Thay đổi | Lý do |
+|---|----------|-------|
+| 1 | Xóa dependency `thymeleaf-extras-java8time` | Đã tích hợp sẵn trong Thymeleaf 3.1+ |
+| 2 | Xóa `engine.addDialect(new Java8TimeDialect())` trong `ThymeleafEmailConfig` | Không còn tồn tại trong Spring Boot 3.x |
+| 3 | Xóa `xmlns:th-java8time` trong template HTML | Không cần thiết nữa |
+| 4 | Sửa comment dependency (bản gốc 2 cái cùng ghi `JavaMailSender`) | Đúng tên dependency |
