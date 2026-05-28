@@ -134,15 +134,13 @@ public class VNPayService {
         String hashData = params.entrySet().stream()
                 .filter(e -> !e.getKey().equals("vnp_SecureHash") && !e.getKey().equals("vnp_SecureHashType"))
                 .sorted(Map.Entry.comparingByKey())
-                .map(e -> e.getKey() + "=" + e.getValue())
+                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
 
         String expectedHash = hmacSha512(hashSecret, hashData);
         log.info("===expectedHash=== [{}]", expectedHash);
-        int diff = expectedHash.length() - receivedHash.length();
-        String paddedReceived = diff > 0 ? "0".repeat(diff) + receivedHash : receivedHash;
 
-        return expectedHash.equalsIgnoreCase(paddedReceived);
+        return expectedHash.equals(receivedHash);
     }
 
     private String hmacSha512(String key, String data) {
