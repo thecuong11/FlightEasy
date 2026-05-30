@@ -36,4 +36,20 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         WHERE b.id = :id
 """)
     Optional<Booking> findByIdWithSegmentsAndPassengers(@Param("id") Long id);
+
+    @Query("""
+        SELECT DISTINCT b FROM Booking b
+        JOIN b.segments s
+        JOIN s.flightClass fc
+        JOIN fc.flight f
+        WHERE b.status = 'CONFIRMED'
+        AND f.departureTime >= :start
+        AND f.departureTime < :end
+""")
+    List<Booking> findConfirmedBookingsForCheckin(
+            @Param("start")
+            LocalDateTime start,
+            @Param("end")
+            LocalDateTime end
+    );
 }
