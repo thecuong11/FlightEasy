@@ -147,10 +147,10 @@ public class EmailService {
 
     private void doSend(EmailLog emailLog, Context context, String templateName) {
         try {
-            String htmlContent = templateEngine.process("email/" + templateName, context);
+            String htmlContent = templateEngine.process(templateName, context);
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-            helper.setFrom(fromEmail, "Flighteasy ✈\uFE0F");
+            helper.setFrom(fromEmail, "FlightEasy ✈\uFE0F");
             helper.setTo(emailLog.getRecipient());
             helper.setSubject(emailLog.getSubject());
             helper.setText(htmlContent, true);

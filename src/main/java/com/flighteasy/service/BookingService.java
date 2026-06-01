@@ -6,11 +6,13 @@ import com.flighteasy.dto.CreateBookingRequest;
 import com.flighteasy.dto.PassengerRequest;
 import com.flighteasy.entity.*;
 import com.flighteasy.enums.BookingStatus;
+import com.flighteasy.event.BookingCancelledEvent;
 import com.flighteasy.exception.custom.*;
 import com.flighteasy.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,6 +32,7 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final PassengerRepository passengerRepository;
     private final BookingSegmentRepository bookingSegmentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final BigDecimal SERVICE_FEE_PER_PERSON= BigDecimal.valueOf(27500);
 
@@ -171,6 +174,8 @@ public class BookingService {
         booking.setCancelledAt(LocalDateTime.now());
         booking.setRefundAmount(refundAmount);
         bookingRepository.save(booking);
+
+        eventPublisher.publishEvent(new BookingCancelledEvent(booking));
 
         releaseSeatsForBooking(booking);
 

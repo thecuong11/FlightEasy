@@ -18,7 +18,7 @@ public class ThymeleafEmailConfig {
 
     private ClassLoaderTemplateResolver emailTemplateResolver() {
         ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
-        resolver.setPrefix("templates/email/");
+        resolver.setPrefix("templates/emails/");
         resolver.setSuffix(".html");
         resolver.setTemplateMode(TemplateMode.HTML);
         resolver.setCharacterEncoding("UTF-8");
