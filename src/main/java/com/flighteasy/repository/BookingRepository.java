@@ -2,6 +2,9 @@ package com.flighteasy.repository;
 
 import com.flighteasy.dto.BookingReportRow;
 import com.flighteasy.entity.Booking;
+import com.flighteasy.enums.BookingStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -136,4 +139,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("toDate")
             LocalDateTime toDate
     );
+
+    Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
 }

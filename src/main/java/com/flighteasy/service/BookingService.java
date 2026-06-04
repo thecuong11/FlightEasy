@@ -13,6 +13,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -268,5 +272,37 @@ public class BookingService {
                 ),
                 booking.getExpiresAt()
         );
+    }
+
+    @Transactional
+    public Page<BookingResponse> getAllBookings(String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Booking> bookings;
+        if (status != null && !status.isBlank()) {
+            BookingStatus bookingStatus = BookingStatus.valueOf(status.toUpperCase());
+            bookings = bookingRepository.findByStatus(bookingStatus, pageable);
+        } else {
+            bookings = bookingRepository.findAll(pageable);
+        }
+
+        return bookings.map(booking -> {
+            FlightClass fc = booking.getSegments().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Booking không có segment"))
+                    .getFlightClass();
+            return toBookingResponse(booking, fc, null);
+        });
+    }
+
+    @Transactional
+    public void cancelBookingByAdmin(String pnrCode, String reason) {
+        Booking booking = bookingRepository.findByPnrCode(pnrCode)
+                .orElseThrow(() -> new NotFoundException("Booking không tồn tại"));
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(LocalDateTime.now());
+        booking.setCancelReason(reason);
+        bookingRepository.save(booking);
+        releaseSeatsForBooking(booking);
     }
 }
