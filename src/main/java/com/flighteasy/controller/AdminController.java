@@ -26,17 +26,17 @@ public class AdminController {
     private final ReportService reportService;
     private final BookingService bookingService;
 
-    @GetMapping("/dashboard/revenue-chart")
+    @GetMapping("/dashboard/kpis")
     public ResponseEntity<DashboardKPIResponse> getDashboardKPIs() {
         return ResponseEntity.ok(dashboardService.getDashboardKPIs());
     }
 
-    @GetMapping("/dashboard/top-routes")
+    @GetMapping("/dashboard/revenue-chart")
     public ResponseEntity<RevenueChartData> getRevenueChart(@RequestParam(defaultValue = "MONTHLY") String period) {
         return ResponseEntity.ok(dashboardService.getRevenueChart(period));
     }
 
-    @GetMapping("/report/export")
+    @GetMapping("/dashboard/top-routes")
     public ResponseEntity<List<TopRouteResponse>> getTopRoutes(@RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(dashboardService.getTopRoutes(limit));
     }

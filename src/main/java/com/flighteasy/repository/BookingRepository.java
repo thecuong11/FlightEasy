@@ -65,11 +65,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query(value = """
         SELECT
             COUNT (*) AS total_bookings,
-            COUNT (CASE WHEN status = 'CONFIRMED' OR status = 'COMPLETED' THEN 1 or END) AS confirmed,
-            COUNT(CASE WHEN status = 'PENDING' THEN 1 END) AS pending,
-            COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) AS cancelled,
-            COALESCE(SUM(CASE WHEN status IN ('CONFIRMED', 'COMPLETED') THEN total_price END), 0) AS revenue,
-            COALESCE(AVG(CASE WHEN status IN ('CONFIRMED', 'COMPLETED') THEN total_price END), 0) AS avg_price
+            COUNT (CASE WHEN status IN ('CONFIRMED', 'COMPLETED') THEN 1 END) AS confirmed,
+            COUNT (CASE WHEN status = 'PENDING' THEN 1 END) AS pending,
+            COUNT (CASE WHEN status = 'CANCELLED' THEN 1 END) AS cancelled,
+            COALESCE (SUM(CASE WHEN status IN ('CONFIRMED', 'COMPLETED') THEN total_price END), 0) AS revenue,
+            COALESCE (AVG(CASE WHEN status IN ('CONFIRMED', 'COMPLETED') THEN total_price END), 0) AS avg_price
         FROM bookings
         WHERE DATE(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh') = :date
 """, nativeQuery = true)
@@ -81,7 +81,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                COUNT(*) AS bookings
            FROM bookings
            WHERE status IN ('CONFIRMED', 'COMPLETED')
-           AND confirmed_at >= : fromDate AND confirmed_at < :toDate
+           AND confirmed_at >= :fromDate AND confirmed_at < :toDate
            GROUP BY DATE(confirmed_at AT TIME ZONE 'Asia/Ho_Chi_Minh')
            ORDER BY date
 """, nativeQuery = true)
@@ -93,13 +93,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     @Query(value = """
-        SELECT 
-        
+        SELECT ao.iata_code AS origin, ad.iata_code AS destination,
+               al.name AS airline, COUNT(b.id) AS total_bookings,
+               SUM(b.total_price) AS total_revenue
         FROM bookings b
         JOIN booking_segments bs ON bs.booking_id = b.id
         JOIN flight_classes fc ON fc.id = bs.flight_class_id
         JOIN flights f ON f.id = fc.flight_id
-        JOIN airports ao ON ao.id = from .origin_id
+        JOIN airports ao ON ao.id = f.origin_id
         JOIN airports ad ON ad.id = f.destination_id
         JOIN airlines al ON al.id = f.airline_id
         WHERE b.status IN ('CONFIRMED', 'COMPLETED')

@@ -3,6 +3,7 @@ package com.flighteasy.exception.handler;
 import com.flighteasy.exception.custom.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -104,5 +105,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleInvalidPayment(InvalidPaymentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("code", "INVALID_PAYMENT", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("code", "ACCESS_DENIED", "message", ex.getMessage()));
     }
 }
