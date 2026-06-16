@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,16 @@ public class PaymentService {
 
         if (booking.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new InvalidPaymentException("Booking đã hết hạn thanh toán");
+        }
+
+        Optional<Payment> existingPending = paymentRepository.findLatestPaymentByBookingId(booking.getId())
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING);
+
+        if (existingPending.isPresent()) {
+            Payment existing = existingPending.get();
+            String ip = clientIp != null ? clientIp : "127.0.0.1";
+            String paymentUrl = vNPayService.createPaymentUrl(booking, existing, request.returnUrl(), ip);
+            return new CreatePaymentResponse(paymentUrl, existing.getVnpTxnRef(), booking.getTotalPrice(), booking.getExpiresAt());
         }
 
         String txnRef = request.pnrCode() + "-" + System.currentTimeMillis();

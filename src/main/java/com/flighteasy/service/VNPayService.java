@@ -14,6 +14,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -112,6 +114,11 @@ public class VNPayService {
 
         if ("00".equals(responseCode)) {
             payment.setStatus(PaymentStatus.SUCCESS);
+
+            if (payment.getBooking().getStatus() == BookingStatus.CONFIRMED) {
+                log.error("DUPLICATE PAYMENT detected for booking {} - txnRef={} needs manual refund",payment.getBooking().getPnrCode(), payment.getVnpTxnRef());
+                payment.setStatus(PaymentStatus.SUCCESS);
+            }
             confirmBooking(payment.getBooking());
             eventPublisher.publishEvent(new BookingConfirmedEvent(payment.getBooking()));
         } else {
@@ -165,5 +172,33 @@ public class VNPayService {
         booking.setConfirmedAt(LocalDateTime.now());
         booking.setExpiresAt(null);
         bookingRepository.save(booking);
+    }
+
+    public Map<String, Object> queryTransactionStatus(Payment payment) {
+        Map<String, String> params = new TreeMap<>();
+        params.put("vnp_Version", "2.1.0");
+        params.put("vnp_Command", "querydr");
+        params.put("vnp_TmnCode", tmnCode);
+        params.put("vnp_TxnRef", payment.getVnpTxnRef());
+        params.put("vnp_OrderInfo", "Kiem tra giao dich " + payment.getVnpTxnRef());
+        params.put("vnp_TransactionDate", payment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        params.put("vnp_Locale", "vn");
+        params.put("vnp_IpAddr", "127.0.0.1");
+        params.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        params.put("vnp_RequestId", UUID.randomUUID().toString());
+
+        String hashData = params.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining("&"));
+        params.put("vnp_SecureHash", hmacSha512(hashData, hashSecret));
+
+        String apiUrl = "";
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.postForObject(apiUrl, params, Map.class);
+    }
+
+    public void confirmFromReconciliation(Payment payment, Map<String, String> params) {
+
     }
 }
