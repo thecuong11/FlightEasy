@@ -18,6 +18,8 @@ import java.util.UUID;
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtService jwtService;
     private static final int MAX_TOKENS_PER_USER = 5;
 
     @Transactional
@@ -40,12 +42,17 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public RefreshToken rotateToken(String rawToken) {
+    public RefreshToken rotateToken(String rawToken, String accessToken) {
         RefreshToken existing = refreshTokenRepository.findByToken(rawToken)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token không hợp lệ"));
 
         if (existing.isUsed()) {
             refreshTokenRepository.revokeAllByUser(existing.getUser());
+
+            if (accessToken != null && !accessToken.isBlank()) {
+                long remainingMillis = jwtService.getRemainingMillis(accessToken);
+                tokenBlacklistService.blacklist(accessToken, remainingMillis);
+            }
             throw new TokenReuseException("Phát hiện token bị tái sử dụng. Tất cả phiên bản bị đăng xuất.");
         }
 

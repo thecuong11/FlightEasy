@@ -32,13 +32,21 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@CookieValue(name = "refresh_token") String token, HttpServletResponse response) {
-       return ResponseEntity.ok(authService.refresh(token, response));
+    public ResponseEntity<?> refresh(@CookieValue(name = "refresh_token") String refreshToken, @RequestHeader(value = "Authorization", required = false) String authHeader, HttpServletResponse response) {
+       String accessToken = null;
+       if (authHeader != null && authHeader.startsWith("Bearer ")) {
+           accessToken = authHeader.substring(7);
+       }
+        return ResponseEntity.ok(authService.refresh(refreshToken, accessToken, response));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@CookieValue(name = "refresh_token") String token, HttpServletResponse response) {
-        authService.logout(token, response);
+    public ResponseEntity<?> logout(@CookieValue(name = "refresh_token") String refreshToken, @RequestHeader(value = "Authorization", required = false) String authHeader, HttpServletResponse response) {
+        String accessToken = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(7);
+        }
+        authService.logout(refreshToken, accessToken, response);
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công"));
     }
 

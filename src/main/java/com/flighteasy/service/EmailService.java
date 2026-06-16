@@ -40,7 +40,7 @@ public class EmailService {
         context.setVariable("flightNumber", getFlightNumber(booking));
         context.setVariable("from", getOriginName(booking));
         context.setVariable("to", getDestinationName(booking));
-        context.setVariable("departuteTime", getDepartureTime(booking));
+        context.setVariable("departureTime", getDepartureTime(booking));
         context.setVariable("totalPrice", formatCurrency(booking.getTotalPrice()));
         context.setVariable("passengers", getPassengerList(booking));
 

@@ -14,6 +14,7 @@ import com.flighteasy.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +27,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -35,6 +37,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserAttemptService userAttemptService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
     public AuthResponse register(RegisterRequest req, HttpServletResponse response) {
@@ -76,17 +79,27 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse refresh(String rawToken, HttpServletResponse response) {
-        RefreshToken newRefreshToken = refreshTokenService.rotateToken(rawToken);
-        String accessToken = jwtService.generateAccessToken(newRefreshToken.getUser());
+    public AuthResponse refresh(String rawToken, String accessToken , HttpServletResponse response) {
+        RefreshToken newRefreshToken = refreshTokenService.rotateToken(rawToken, accessToken);
+        String newAccessToken = jwtService.generateAccessToken(newRefreshToken.getUser());
         setRefreshTokenCookie(response, newRefreshToken.getToken());
 
         return new AuthResponse(accessToken, "Bearer", null);
     }
 
     @Transactional
-    public void logout(String rawToken, HttpServletResponse response) {
-        refreshTokenRepository.findByToken(rawToken).ifPresent(t -> {
+    public void logout(String rawRefreshToken, String accessToken, HttpServletResponse response) {
+
+        if (accessToken != null && !accessToken.isBlank()) {
+            try {
+                long reminingMillis = jwtService.getRemainingMillis(accessToken);
+                tokenBlacklistService.blacklist(accessToken, reminingMillis);
+            } catch (Exception ex) {
+                log.warn("Could not blacklist token: {}", ex.getMessage());
+            }
+        }
+
+        refreshTokenRepository.findByToken(rawRefreshToken).ifPresent(t -> {
             t.setUsed(true);
             refreshTokenRepository.save(t);
         });

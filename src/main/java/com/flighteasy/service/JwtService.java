@@ -66,4 +66,14 @@ public class JwtService {
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
+
+    public Date getExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    public long getRemainingMillis(String token) {
+        Date expiration = getExpiration(token);
+        long remaining = expiration.getTime() - System.currentTimeMillis();
+        return Math.max(remaining, 0);
+    }
 }
