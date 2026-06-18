@@ -28,6 +28,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         LEFT JOIN FETCH fc.flight
         WHERE b.status = 'PENDING'
         AND b.expiresAt < :now
+        AND NOT EXISTS (
+                SELECT 1 not FROM Payment p
+                WHERE p.booking = b
+                AND p.status = 'PENDING' 
+                )
         """)
     List<Booking> findExpiredPending(@Param("now")LocalDateTime now);
 

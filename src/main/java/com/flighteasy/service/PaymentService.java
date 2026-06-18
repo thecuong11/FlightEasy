@@ -42,12 +42,12 @@ public class PaymentService {
             throw new InvalidPaymentException("Booking đã hết hạn thanh toán");
         }
 
+        String ip = clientIp != null ? clientIp : "127.0.0.1";
         Optional<Payment> existingPending = paymentRepository.findLatestPaymentByBookingId(booking.getId())
                 .filter(p -> p.getStatus() == PaymentStatus.PENDING);
 
         if (existingPending.isPresent()) {
             Payment existing = existingPending.get();
-            String ip = clientIp != null ? clientIp : "127.0.0.1";
             String paymentUrl = vNPayService.createPaymentUrl(booking, existing, request.returnUrl(), ip);
             return new CreatePaymentResponse(paymentUrl, existing.getVnpTxnRef(), booking.getTotalPrice(), booking.getExpiresAt());
         }
@@ -64,7 +64,6 @@ public class PaymentService {
                 .build();
         payment = paymentRepository.save(payment);
 
-        String ip =clientIp != null ? clientIp : "127.0.0.1";
         String paymentUrl = vNPayService.createPaymentUrl(booking, payment, request.returnUrl(), ip);
 
         return new CreatePaymentResponse(paymentUrl, txnRef, booking.getTotalPrice(), booking.getExpiresAt());

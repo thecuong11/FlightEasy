@@ -19,7 +19,7 @@ import java.util.Map;
 @Slf4j
 public class PaymentReconciliationScheduler {
     private final PaymentRepository paymentRepository;
-    private final VNPayService vNPayService;
+    private final VNPayService vnPayService;
 
     @Scheduled(fixedDelay = 300_000)
     public void reconcilePendingPayments() {
@@ -28,28 +28,22 @@ public class PaymentReconciliationScheduler {
 
         for (Payment payment : stuck) {
             try {
-                Map<String, Object> result = vNPayService.queryTransactionStatus(payment);
+                Map<String, Object> result = vnPayService.queryTransactionStatus(payment);
                 String responseCode = (String) result.get("vnp_responseCode");
                 String tranStatus = (String) result.get("vnp_TransactionStatus");
 
                 if ("00".equals(responseCode) && "00".equals(tranStatus)) {
-                    Map<String, String> fakeIpnParams = new HashMap<>();
-                    fakeIpnParams.put("vnp_TxnRef", payment.getVnpTxnRef());
-                    fakeIpnParams.put("vnp_Amount", String.valueOf(payment.getAmountVnpay()));
-                    fakeIpnParams.put("vnp_ResponseCode", "00");
-                    fakeIpnParams.put("vnp_TransactionNo", (String) result.get("vnp_TransactionNo"));
-                    fakeIpnParams.put("vnp_BankCode", (String) result.getOrDefault("vnp_BankCode", ""));
+                    vnPayService.confirmFromReconciliation(payment, result);
 
-                    vNPayService.confirmFromReconciliation(payment, fakeIpnParams);
-                    log.info("Reconciled stuck payment {} -> SUCCESS", payment.getVnpTxnRef());
                 } else if ("01".equals(tranStatus)) {
-
+                    log.info("Payment {} vẫn đang xử lý (transStatus=01), kiểm tra lại sau", payment.getVnpTxnRef());
                 } else {
                     payment.setStatus(PaymentStatus.FAILED);
                     paymentRepository.save(payment);
+                    log.info("Payment {} được xác nhận FAILED qua reconciliation (responseCode={})", payment.getVnpTxnRef(), responseCode);
                 }
             } catch (Exception e) {
-                log.error("Reconciliation failed for {}: {}" , payment.getVnpTxnRef(), e.getMessage());
+                log.error("Reconciliation lỗi cho payment {}: {}" , payment.getVnpTxnRef(), e.getMessage());
             }
         }
     }

@@ -13,6 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -45,6 +49,9 @@ public class VNPayService {
 
     @Value("${vnpay.payment-url}")
     private String paymentUrl;
+
+    @Value("${vnpay.api-url}")
+    private String apiUrl;
 
     public String createPaymentUrl(Booking booking, Payment payment, String returnUrl, String ipAddress) {
         long amount = booking.getTotalPrice().multiply(BigDecimal.valueOf(100)).longValue();
@@ -182,7 +189,6 @@ public class VNPayService {
         params.put("vnp_TxnRef", payment.getVnpTxnRef());
         params.put("vnp_OrderInfo", "Kiem tra giao dich " + payment.getVnpTxnRef());
         params.put("vnp_TransactionDate", payment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-        params.put("vnp_Locale", "vn");
         params.put("vnp_IpAddr", "127.0.0.1");
         params.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         params.put("vnp_RequestId", UUID.randomUUID().toString());
@@ -191,14 +197,50 @@ public class VNPayService {
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining("&"));
-        params.put("vnp_SecureHash", hmacSha512(hashData, hashSecret));
+        params.put("vnp_SecureHash", hmacSha512(hashSecret, hashData));
 
-        String apiUrl = "";
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.postForObject(apiUrl, params, Map.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(params, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, entity, Map.class);
+        return response.getBody();
     }
 
-    public void confirmFromReconciliation(Payment payment, Map<String, String> params) {
+    public void confirmFromReconciliation(Payment payment, Map<String, Object> queryResult) {
 
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            return;
+        }
+
+        payment.setVnpTransactionNo((String) queryResult.get("vnp_TransactionNo"));
+        payment.setVnpResponseCode((String) queryResult.get("vnp_ResponseCode"));
+        payment.setVnpBankCode((String) queryResult.getOrDefault("vnp_BankCode", ""));
+        payment.setStatus(PaymentStatus.SUCCESS);
+
+        try {
+            payment.setRawIpnData(new ObjectMapper().writeValueAsString(queryResult));
+        } catch (Exception e) {
+
+        }
+
+        Booking booking = payment.getBooking();
+
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            log.error("DUPLICATE PAYMENT phát hiện qua reconciliation - booking {} đã CONFIRMED, " +
+                    "txnRef={} cần được hoàn tiền th công, amount={}",
+                    booking.getPnrCode(), payment.getVnpTxnRef(), payment.getAmount());
+
+        } else {
+            booking.setStatus(BookingStatus.CONFIRMED);
+            booking.setConfirmedAt(LocalDateTime.now());
+            booking.setExpiresAt(null);
+            bookingRepository.save(booking);
+            eventPublisher.publishEvent(new BookingConfirmedEvent(booking));
+        }
+
+        paymentRepository.save(payment);
+        log.info("Reconciled payment {} -> SUCCESS (qua querydr, IPN gốc bị miss", payment.getVnpTxnRef());
     }
 }
