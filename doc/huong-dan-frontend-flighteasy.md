@@ -1,8 +1,10 @@
 # Hướng dẫn Implement Frontend — FlightEasy
 
-> **Stack:** React 18 + Vite + TypeScript + Tailwind CSS + React Query + Axios  
+> **Stack:** React 18 + Vite + TypeScript + Tailwind CSS **v4** + React Query + Axios  
 > **Tương ứng với:** BE Spring Boot đã implement (Module 01–08)  
 > **Base URL BE:** `http://localhost:8080`
+
+> ⚠️ **Tailwind CSS v4** — Không dùng `tailwind.config.js`, `postcss.config.js`. Dùng `@tailwindcss/vite` plugin và `@import "tailwindcss"` trong CSS.
 
 ---
 
@@ -68,15 +70,11 @@ npm install \
   clsx \
   tailwind-merge
 
-# Cài Tailwind CSS
+# Cài Tailwind CSS v4
 npm install -D \
-  tailwindcss \
-  postcss \
-  autoprefixer \
+  tailwindcss@next \
+  @tailwindcss/vite \
   @types/node
-
-# Init Tailwind
-npx tailwindcss init -p
 ```
 
 ### 0.3 Cấu trúc thư mục cuối cùng
@@ -138,7 +136,6 @@ flighteasy-frontend/
 │   ├── main.tsx
 │   └── index.css
 ├── .env.local                   ← Biến môi trường
-├── tailwind.config.js
 ├── tsconfig.json
 ├── vite.config.ts
 └── package.json
@@ -148,54 +145,21 @@ flighteasy-frontend/
 
 ## Module 1 — Cài đặt & Cấu hình
 
-### 1.1 `tailwind.config.js`
+### 1.1 `vite.config.ts` — Tailwind v4 plugin + proxy
 
-```js
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          50:  "#eff6ff",
-          100: "#dbeafe",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1a56db",
-        },
-      },
-    },
-  },
-  plugins: [],
-};
-```
-
-### 1.2 `src/index.css`
-
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
-}
-```
-
-### 1.3 `vite.config.ts` — proxy để tránh CORS khi dev
+> **Tailwind CSS v4 không dùng `tailwind.config.js` hay `postcss.config.js` nữa.** Thay vào đó, tích hợp trực tiếp qua Vite plugin.
 
 ```ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss(),   // ← Thêm plugin Tailwind v4
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -215,14 +179,38 @@ export default defineConfig({
 
 > **Quan trọng:** Nhờ proxy này, FE gọi `/api/...` sẽ được forward sang BE `localhost:8080/api/...` — tránh lỗi CORS khi dev.
 
-### 1.4 `.env.local`
+### 1.2 `src/index.css`
+
+> Tailwind v4 dùng `@import "tailwindcss"` thay vì 3 dòng `@tailwind base/components/utilities`. Custom theme được định nghĩa bằng CSS variables trong `@theme`.
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1a56db;
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+}
+```
+
+### 1.3 `.env.local`
 
 ```env
 VITE_API_URL=http://localhost:8080
 VITE_APP_NAME=FlightEasy
 ```
 
-### 1.5 `src/lib/axios.ts` — Axios instance + Token Interceptor (Module 08)
+### 1.4 `src/lib/axios.ts` — Axios instance + Token Interceptor (Module 08)
 
 ```ts
 import axios from "axios";
@@ -317,7 +305,7 @@ api.interceptors.response.use(
 export default api;
 ```
 
-### 1.6 `src/types/` — TypeScript Interfaces
+### 1.5 `src/types/` — TypeScript Interfaces
 
 ```ts
 // auth.types.ts
@@ -446,7 +434,7 @@ export interface DashboardKPIResponse {
 }
 ```
 
-### 1.7 `src/store/authStore.ts` — Zustand global state
+### 1.6 `src/store/authStore.ts` — Zustand global state
 
 ```ts
 import { create } from "zustand";
@@ -2068,9 +2056,8 @@ npm install \
 
 # Dev dependencies
 npm install -D \
-  tailwindcss \
-  postcss \
-  autoprefixer \
+  tailwindcss@next \
+  @tailwindcss/vite \
   @types/node
 ```
 
@@ -2082,7 +2069,7 @@ npm install -D \
 - [ ] PostgreSQL & Redis đang chạy
 - [ ] `.env.local` đã điền đúng
 - [ ] `vite.config.ts` đã cấu hình proxy
-- [ ] `tailwind.config.js` đã `init`
+- [ ] `@tailwindcss/vite` đã được thêm vào `vite.config.ts` và `@import "tailwindcss"` có trong `index.css`
 - [ ] `@` alias hoạt động trong `tsconfig.json`:
 
 ```json
