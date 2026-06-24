@@ -5,6 +5,7 @@ import type {FlightSearchResult} from "@/types/flight.types.ts";
 import {format, parseISO} from "date-fns";
 import {vi} from "date-fns/locale";
 import {Clock, Luggage, ArrowRight} from "lucide-react";
+import {ArrowLeft} from "lucide-react";
 
 const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("vi-VN", {style: "currency", currency: "VND"}).format(amount);
@@ -131,6 +132,13 @@ export default function SearchResultsPage() {
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
+            <button
+                onClick={() => navigate(-1)}
+                className="mb-4 flex items-center gap-2 rounded-lg border px-3 py-2 hover:bg-gray-50"
+            >
+                <ArrowLeft size={18} />
+                Quay lại
+            </button>
             {/* Summary */}
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">

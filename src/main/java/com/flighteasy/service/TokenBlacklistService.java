@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -13,19 +14,18 @@ import java.time.Duration;
 @Slf4j
 public class TokenBlacklistService {
 
-    @Qualifier("stringRedisTemplate")
-    private final RedisTemplate<String, String> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private static final String BLACKLIST_PREFIX = "blacklist:token:";
 
     public void blacklist(String accessToken, long remainingMillis) {
         if (remainingMillis <= 0) return;
 
         String key = BLACKLIST_PREFIX + accessToken;
-        redisTemplate.opsForValue().set(key, "revoked", Duration.ofMillis(remainingMillis));
+        stringRedisTemplate.opsForValue().set(key, "revoked", Duration.ofMillis(remainingMillis));
         log.info("Access token blacklisted, TTL={}ms", remainingMillis);
     }
 
     public boolean isBlacklisted(String accessToken) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + accessToken));
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(BLACKLIST_PREFIX + accessToken));
     }
 }

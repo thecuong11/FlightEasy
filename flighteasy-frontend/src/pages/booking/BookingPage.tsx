@@ -4,7 +4,7 @@ import {useMutation} from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {User, Mail} from "lucide-react";
 import {bookingApi} from "@/api/booking.api.ts";
-import {useAuthstore} from "@/store/authStore.ts";
+import {useAuthStore} from "@/store/authStore.ts";
 import type {CreateBookingPayload} from "@/api/booking.api.ts";
 
 interface PassengerField {
@@ -27,7 +27,7 @@ interface BookingForm {
 export default function BookingPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const {user} = useAuthstore();
+    const {user} = useAuthStore();
     const flightClassId = Number(searchParams.get("flightClassId"));
     const adults = Number(searchParams.get("adults") || 1);
 

@@ -6,7 +6,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import {Plane} from "lucide-react";
 import {authApi} from "@/api/auth.api.ts";
-import {useAuthstore} from "@/store/authStore.ts";
+import {useAuthStore} from "@/store/authStore.ts";
 
 const loginSchema = z.object({
     email: z.string().email("Email không hợp lệ"),
@@ -17,7 +17,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const {setUser, setToken} = useAuthstore();
+    const {setUser, setToken} = useAuthStore();
     const [loading, setLoading] = useState(false);
 
     const {

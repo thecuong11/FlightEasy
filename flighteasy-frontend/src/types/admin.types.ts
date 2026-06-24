@@ -3,7 +3,7 @@ export interface DashboardKPIResponse {
     todayRevenue: number;
     yesterdayRevenue: number;
     revenueGrowthPercent: number;
-    todayBooking: number;
+    todayBookings: number;
     confirmedBookings: number;
     pendingBookings: number;
     cancelledBookings: number;

@@ -6,12 +6,12 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import {Plane} from "lucide-react";
 import {authApi} from "@/api/auth.api.ts";
-import {useAuthstore} from "@/store/authStore.ts";
+import {useAuthStore} from "@/store/authStore.ts";
 const registerSchema = z
     .object({
     fullName: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
     email: z.string().email("Email không hợp lệ"),
-    password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, "Mật khẩu phải có chữ hoa, chữ thường, s và ít nhâ 8 ký tự"),
+    password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/, "Mật khẩu phải có chữ hoa, chữ thường, số và ít nhất 8 ký tự"),
     confirmPassword: z.string(),
     })
     .refine((d) => d.password === d.confirmPassword, {
@@ -23,7 +23,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
     const navigate = useNavigate();
-    const {setUser, setToken} = useAuthstore();
+    const {setUser, setToken} = useAuthStore();
     const [loading, setLoading] = useState(false);
 
     const {
@@ -42,8 +42,8 @@ export default function RegisterPage() {
             });
             setToken(res.data.accessToken);
             setUser(res.data.user);
-            toast.success("Đăng ký thành công!");
-            navigate("/");
+            toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+            navigate("/login");
         } catch {
 
         } finally {
