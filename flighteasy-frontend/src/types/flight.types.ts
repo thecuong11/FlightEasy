@@ -30,7 +30,7 @@ export interface FlightSearchResponse {
         infants: number;
         classType: string;
     };
-    flight: FlightSearchResult[];
+    flights: FlightSearchResult[];
     priceRange: {min: number; max: number};
     availableFilters: {
         airlines: string[];
