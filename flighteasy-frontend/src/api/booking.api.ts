@@ -27,6 +27,8 @@ export const bookingApi = {
 
     getBooking: (pnr: string) => api.get<BookingResponse>(`/v1/nookings/${pnr}`),
 
+    getMyBookings: () => api.get<BookingResponse[]>("/v1/bookings/my"),
+
     cancelBooking: (pnr: string) =>
         api.delete<{pnrCode: string; refundAmount: number; cancelledAt: string}>(`/v1/bookings/${pnr}`),
 

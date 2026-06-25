@@ -9,8 +9,10 @@ import SearchPage from "@/pages/flight/SearchPage.tsx";
 import SearchResultsPage from "@/pages/flight/SearchResultsPage.tsx";
 import BookingPage from "@/pages/booking/BookingPage.tsx";
 import BookingConfirmPage from "@/pages/booking/BookingConfirmPage.tsx";
+import MyBookingsPage from "@/pages/booking/MyBookingsPage.tsx";
 import PaymentResultPage from "@/pages/payment/PaymentResultPage.tsx";
 import DashboardPage from "@/pages/admin/DashboardPage.tsx";
+import BookingsManagePage from "@/pages/admin/BookingsManagePage.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,47 +38,63 @@ function AdminRoute({children}: {children: React.ReactNode}) {
 export default function App() {
   return (
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Toaster position="top-right" />
-          <Routes>
-            {/* Public */}
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/" element={<SearchPage />} />
-            <Route path="/search/results" element={<SearchResultsPage />} />
+          <BrowserRouter>
+              <Toaster position="top-right" />
+              <Routes>
+                  {/* Public */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/" element={<SearchPage />} />
+                  <Route path="/search/results" element={<SearchResultsPage />} />
 
-            {/* Payment result — cần public vì VNPay redirect về */}
-            <Route path="/payment/result" element={<PaymentResultPage />} />
+                  {/* Payment result — cần public vì VNPay redirect về */}
+                  <Route path="/payment/result" element={<PaymentResultPage />} />
 
-            {/* Private — cần đăng nhập */}
-            <Route
-                path="/booking"
-                element={
-                  <PrivateRoute>
-                    <BookingPage />
-                  </PrivateRoute>
-                }
-            />
-            <Route
-                path="/booking/confirm/:pnr"
-                element={
-                  <PrivateRoute>
-                    <BookingConfirmPage />
-                  </PrivateRoute>
-                }
-            />
+                  {/* Private — cần đăng nhập */}
+                  <Route
+                      path="/booking"
+                      element={
+                          <PrivateRoute>
+                              <BookingPage />
+                          </PrivateRoute>
+                      }
+                  />
+                  <Route
+                      path="/booking/confirm/:pnr"
+                      element={
+                          <PrivateRoute>
+                              <BookingConfirmPage />
+                          </PrivateRoute>
+                      }
+                  />
+                  <Route
+                      path="/bookings"
+                      element={
+                          <PrivateRoute>
+                              <MyBookingsPage />
+                          </PrivateRoute>
+                      }
+                  />
 
-            {/* Admin only */}
-            <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <DashboardPage />
-                  </AdminRoute>
-                }
-            />
-          </Routes>
-        </BrowserRouter>
+                  {/* Admin only */}
+                  <Route
+                      path="/admin"
+                      element={
+                          <AdminRoute>
+                              <DashboardPage />
+                          </AdminRoute>
+                      }
+                  />
+                  <Route
+                      path="/admin/bookings"
+                      element={
+                          <AdminRoute>
+                              <BookingsManagePage />
+                          </AdminRoute>
+                      }
+                  />
+              </Routes>
+          </BrowserRouter>
       </QueryClientProvider>
   );
 }

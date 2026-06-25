@@ -1,3 +1,11 @@
+export interface Airport {
+    id: number;
+    iataCode: string;
+    name: string;
+    city: string;
+    country: string;
+}
+
 export interface FlightSearchResult {
     id: number;
     flightNumber: string;
