@@ -1,13 +1,17 @@
 package com.flighteasy.controller;
 
 import com.flighteasy.dto.*;
+import com.flighteasy.entity.Airline;
+import com.flighteasy.repository.AirlineRepository;
 import com.flighteasy.service.BookingService;
 import com.flighteasy.service.DashboardService;
+import com.flighteasy.service.FlightService;
 import com.flighteasy.service.ReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +29,7 @@ public class AdminController {
     private final DashboardService dashboardService;
     private final ReportService reportService;
     private final BookingService bookingService;
+    private final FlightService flightService;
 
     @GetMapping("/dashboard/kpis")
     public ResponseEntity<DashboardKPIResponse> getDashboardKPIs() {
@@ -69,5 +74,23 @@ public class AdminController {
             @RequestParam(required = false) String reason) {
         bookingService.cancelBookingByAdmin(pnr, reason);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/airlines")
+    public ResponseEntity<List<Airline>> getAllAirlines() {
+        return ResponseEntity.ok(flightService.getAllAirlines());
+    }
+
+    @PostMapping("/airlines")
+    public ResponseEntity<Airline> createAirline(@Valid @RequestBody Airline airline) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(flightService.createAirline(airline));
+    }
+
+    @GetMapping("/flights")
+    public ResponseEntity<Page<FlightResponse>> getAllFlights(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "15") int size,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(flightService.getAllFlights(status, page, size));
     }
 }

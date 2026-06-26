@@ -3,6 +3,8 @@ package com.flighteasy.repository;
 import com.flighteasy.dto.FlightSearchResult;
 import com.flighteasy.entity.Flight;
 import com.flighteasy.enums.FlightStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,4 +57,8 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
 
     @Query("SELECT COUNT(f) FROM Flight f WHERE f.status = :status AND CAST(f.departureTime AS LOCALDATE ) = :date ")
     long countByStatusAndDepartureDate(@Param("status") FlightStatus status, @Param("date") LocalDate date);
+
+    Page<Flight> findAllByOrderByDepartureTimeDesc(Pageable pageable);
+
+    Page<Flight> findByStatusOrderByDepartureTimeDesc(FlightStatus status, Pageable pageable);
 }

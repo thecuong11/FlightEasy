@@ -14,6 +14,10 @@ import PaymentResultPage from "@/pages/payment/PaymentResultPage.tsx";
 import DashboardPage from "@/pages/admin/DashboardPage.tsx";
 import BookingsManagePage from "@/pages/admin/BookingsManagePage.tsx";
 import Navbar from "@/components/layout/Navbar.tsx";
+import AdminLayout from "@/layouts/AdminLayout.tsx";
+import AirportsPage from "@/pages/admin/AirportsPage.tsx";
+import AirlinesPage from "@/pages/admin/AirlinesPage.tsx";
+import FlightsPage from "@/pages/admin/FlightsPage.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,15 +88,14 @@ export default function App() {
                   <Route
                       path="/admin"
                       element={
-                          <AdminRoute><DashboardPage /></AdminRoute>
+                          <AdminRoute><AdminLayout /></AdminRoute>
                       }
                   />
-                  <Route
-                      path="/admin/bookings"
-                      element={
-                          <AdminRoute><BookingsManagePage /></AdminRoute>
-                      }
-                  />
+                  <Route index element={<DashboardPage />} />
+                  <Route path="bookings" element={<BookingsManagePage />} />
+                  <Route path="airports" element={<AirportsPage />} />
+                  <Route path="airlines" element={<AirlinesPage />} />
+                  <Route path="flights" element={<FlightsPage />} />
               </Routes>
           </BrowserRouter>
       </QueryClientProvider>

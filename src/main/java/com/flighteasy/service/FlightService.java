@@ -14,6 +14,10 @@ import com.flighteasy.exception.custom.NotFoundException;
 import com.flighteasy.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -210,6 +214,37 @@ public class FlightService {
                         fc.getBaggageAllowanceKg()
                 )).toList()
         );
+    }
+
+    @Transactional
+    public Airline createAirline(Airline airline) {
+        if (airlineRepository.existsByIataCode(airline.getIataCode())) {
+            throw new DuplicateException("Mã IATA hãng bay đã tồn tại: " + airline.getIataCode());
+        }
+        airline.setActive(true);
+        return airlineRepository.save(airline);
+    }
+
+    public Page<FlightResponse> getAllFlights(String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (status != null && !status.isBlank()) {
+            FlightStatus flightStatus;
+            try {
+                flightStatus = FlightStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Trạng thái không hợp lệ: " + status);
+            }
+            return flightRepository.findByStatusOrderByDepartureTimeDesc(flightStatus, pageable)
+                    .map(this::toFlightResponse);
+        }
+
+        return flightRepository.findAllByOrderByDepartureTimeDesc(pageable)
+                .map(this::toFlightResponse);
+    }
+
+    public List<Airline> getAllAirlines() {
+        return airlineRepository.findByIsActiveTrue();
     }
 
 }
