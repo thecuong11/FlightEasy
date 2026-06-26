@@ -27,7 +27,10 @@ public class SecurityConfig {
     public static String[] WHITE_LIST_API = {
             "/api/v1/auth/**",
             "/api/v1/payments/vnpay/ipn",
-            "/api/v1/payments/vnpay/return"
+            "/api/v1/payments/vnpay/return",
+            "/api/v1/airports",
+            "/api/v1/airports/**",
+            "/api/v1/flights/**"
     };
 
     private final JwtAuthFilter jwtAuthFilter;

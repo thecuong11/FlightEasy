@@ -1,5 +1,6 @@
 package com.flighteasy.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flighteasy.dto.DashboardKPIResponse;
 import com.flighteasy.dto.RevenueChartData;
 import com.flighteasy.dto.TopRouteResponse;
@@ -30,6 +31,7 @@ public class DashboardService {
     private final BookingRepository bookingRepository;
     private final FlightRepository flightRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     private static final String KPI_CACHE_KEY = "admin:dashboard:kpis";
     private static final Duration KPI_TTL = Duration.ofMinutes(5);
@@ -38,7 +40,10 @@ public class DashboardService {
     public DashboardKPIResponse getDashboardKPIs() {
         Object cached = redisTemplate.opsForValue().get(KPI_CACHE_KEY);
         if (cached != null) {
-            return (DashboardKPIResponse) cached;
+            if (cached instanceof DashboardKPIResponse) {
+                return (DashboardKPIResponse) cached;
+            }
+            return objectMapper.convertValue(cached, DashboardKPIResponse.class);
         }
 
         LocalDate today = LocalDate.now();

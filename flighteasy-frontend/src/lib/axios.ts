@@ -35,8 +35,9 @@ api.interceptors.response.use(
     (res) => res,
     async (error) => {
         const originalRequest = error.config;
+        const isLoginEndpoint = originalRequest.url?.includes("/v1/auth/login");
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !isLoginEndpoint) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({resolve, reject});

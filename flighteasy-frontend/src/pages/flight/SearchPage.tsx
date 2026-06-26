@@ -1,8 +1,9 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
-import {Plane, Calendar, Users, ArrowRightLeft} from "lucide-react";
+import { Calendar, Users, ArrowRightLeft} from "lucide-react";
 import {format} from "date-fns";
+import AirportAutocomplete from "@/components/airport/AirportAutocomplete.tsx";
 
 interface SearchForm {
     from: string;
@@ -27,6 +28,8 @@ export default function SearchPage() {
             infants: 0,
             classType: "ECONOMY",
             tripType: "one-way",
+            from: "",
+            to: ""
         },
     });
 
@@ -59,10 +62,6 @@ export default function SearchPage() {
         <div className="min-h-screen bg-gradient-to-b from-blue-700 to-blue-900">
             {/* Hero */}
             <div className="pt-16 pb-32 text-center text-white px-4">
-                <div className="inline-flex items-center gap-2 mb-4">
-                    <Plane className="w-8 h-8" />
-                    <span className="text-3xl font-bold">FlightEasy</span>
-                </div>
                 <h1 className="text-4xl font-bold mt-2 mb-3">Đặt vé máy bay dễ dàng</h1>
                 <p className="text-blue-200">Tìm kiếm hàng nghìn chuyến bay với giá tốt nhất</p>
             </div>
@@ -92,11 +91,10 @@ export default function SearchPage() {
                         <div className="flex items-center gap-2">
                             <div className="flex-1">
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Từ</label>
-                                <input
-                                    {...register("from", { required: true })}
+                                <AirportAutocomplete
                                     placeholder="SGN - Hồ Chí Minh"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                                    maxLength={3}
+                                    value={watch("from")}
+                                    onChange={(val) => setValue("from", val)}
                                 />
                             </div>
 
@@ -110,11 +108,10 @@ export default function SearchPage() {
 
                             <div className="flex-1">
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Đến</label>
-                                <input
-                                    {...register("to", { required: true })}
+                                <AirportAutocomplete
                                     placeholder="HAN - Hà Nội"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                                    maxLength={3}
+                                    value={watch("to")}
+                                    onChange={(val) => setValue("to", val)}
                                 />
                             </div>
                         </div>

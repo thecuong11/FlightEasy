@@ -13,6 +13,7 @@ import MyBookingsPage from "@/pages/booking/MyBookingsPage.tsx";
 import PaymentResultPage from "@/pages/payment/PaymentResultPage.tsx";
 import DashboardPage from "@/pages/admin/DashboardPage.tsx";
 import BookingsManagePage from "@/pages/admin/BookingsManagePage.tsx";
+import Navbar from "@/components/layout/Navbar.tsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,15 @@ function AdminRoute({children}: {children: React.ReactNode}) {
   return <>{children}</>;
 }
 
+function MainLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <>
+            <Navbar />
+            {children}
+        </>
+    );
+}
+
 export default function App() {
   return (
       <QueryClientProvider client={queryClient}>
@@ -44,35 +54,29 @@ export default function App() {
                   {/* Public */}
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/" element={<SearchPage />} />
-                  <Route path="/search/results" element={<SearchResultsPage />} />
+                  <Route path="/" element={<MainLayout><SearchPage /></MainLayout>} />
+                  <Route path="/search/results" element={<MainLayout><SearchResultsPage /></MainLayout>} />
 
                   {/* Payment result — cần public vì VNPay redirect về */}
-                  <Route path="/payment/result" element={<PaymentResultPage />} />
+                  <Route path="/payment/result" element={<MainLayout><PaymentResultPage /></MainLayout>} />
 
                   {/* Private — cần đăng nhập */}
                   <Route
                       path="/booking"
                       element={
-                          <PrivateRoute>
-                              <BookingPage />
-                          </PrivateRoute>
+                          <PrivateRoute><MainLayout><BookingPage /></MainLayout></PrivateRoute>
                       }
                   />
                   <Route
                       path="/booking/confirm/:pnr"
                       element={
-                          <PrivateRoute>
-                              <BookingConfirmPage />
-                          </PrivateRoute>
+                          <PrivateRoute><MainLayout><BookingConfirmPage /></MainLayout></PrivateRoute>
                       }
                   />
                   <Route
                       path="/bookings"
                       element={
-                          <PrivateRoute>
-                              <MyBookingsPage />
-                          </PrivateRoute>
+                          <PrivateRoute><MainLayout><MyBookingsPage /></MainLayout></PrivateRoute>
                       }
                   />
 
@@ -80,17 +84,13 @@ export default function App() {
                   <Route
                       path="/admin"
                       element={
-                          <AdminRoute>
-                              <DashboardPage />
-                          </AdminRoute>
+                          <AdminRoute><DashboardPage /></AdminRoute>
                       }
                   />
                   <Route
                       path="/admin/bookings"
                       element={
-                          <AdminRoute>
-                              <BookingsManagePage />
-                          </AdminRoute>
+                          <AdminRoute><BookingsManagePage /></AdminRoute>
                       }
                   />
               </Routes>

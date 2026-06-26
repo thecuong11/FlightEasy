@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import {Plane} from "lucide-react";
 import {authApi} from "@/api/auth.api.ts";
 import {useAuthStore} from "@/store/authStore.ts";
+import axios from "axios";
 
 const loginSchema = z.object({
     email: z.string().email("Email không hợp lệ"),
@@ -34,8 +35,12 @@ export default function LoginPage() {
             setUser(res.data.user);
             toast.success("Đăng nhập thành công!");
             navigate(res.data.user.role === "ROLE_ADMIN" ? "/admin" : "/");
-        } catch {
-
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || "Đăng nhập thất bại");
+            } else {
+                toast.error("Có lỗi xảy ra");
+            }
         } finally {
             setLoading(false);
         }
