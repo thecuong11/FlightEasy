@@ -90,12 +90,13 @@ export default function App() {
                       element={
                           <AdminRoute><AdminLayout /></AdminRoute>
                       }
-                  />
-                  <Route index element={<DashboardPage />} />
-                  <Route path="bookings" element={<BookingsManagePage />} />
-                  <Route path="airports" element={<AirportsPage />} />
-                  <Route path="airlines" element={<AirlinesPage />} />
-                  <Route path="flights" element={<FlightsPage />} />
+                  >
+                      <Route index element={<DashboardPage />} />
+                      <Route path="bookings" element={<BookingsManagePage />} />
+                      <Route path="airports" element={<AirportsPage />} />
+                      <Route path="airlines" element={<AirlinesPage />} />
+                      <Route path="flights" element={<FlightsPage />} />
+                  </Route>
               </Routes>
           </BrowserRouter>
       </QueryClientProvider>

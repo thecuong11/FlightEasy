@@ -43,7 +43,7 @@ export default function AirlinesPage() {
         }
     });
 
-    const airlines = data?.data || [];
+    const airlines: any[] = Array.isArray(data?.data) ? data.data : [];
 
     return (
         <div>

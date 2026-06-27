@@ -104,8 +104,8 @@ export default function FlightsPage() {
         },
     });
 
-    const flights = data?.data?.content ?? data?.data ?? [];
-    const totalPages = data?.data?.totalPages ?? 1;
+    const flights: any[] = data?.data?.content ?? [];
+    const totalPages: number = data?.data?.totalPages ?? 1;
     const airports: any[] = airportsData?.data || [];
     const airlines: any[] = airlinesData?.data || [];
 

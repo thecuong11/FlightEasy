@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 const NAV_ITEMS = [
     {path: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true},
-    {path: "/admin/flights", label: "CHuyến bay", icon: Plane},
+    {path: "/admin/flights", label: "Chuyến bay", icon: Plane},
     {path: "/admin/airports", label: "Sân bay", icon: MapPin},
     {path: "/admin/airlines", label: "Hãng bay", icon: Briefcase},
     {path: "/admin/bookings", label: "Booking", icon: BookOpen}

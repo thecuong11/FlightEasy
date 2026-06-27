@@ -63,7 +63,7 @@ export default function AirportsPage() {
         }
     });
 
-    const airports = data?.data || [];
+    const airports: any[] = Array.isArray(data?.data) ? data.data : [];
 
     const fields = [
         { name: "iataCode" as const, label: "Mã IATA (3 ký tự)", placeholder: "SGN" },
