@@ -2,7 +2,10 @@ package com.flighteasy.controller;
 
 import com.flighteasy.dto.*;
 import com.flighteasy.entity.User;
+import com.flighteasy.exception.custom.RateLimitExceededException;
 import com.flighteasy.service.AuthService;
+import com.flighteasy.service.RateLimitService;
+import io.github.bucket4j.Bucket;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -20,6 +23,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final RateLimitService rateLimitService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req, HttpServletResponse response) {
@@ -28,6 +32,12 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
+        String ip = request.getRemoteAddr();
+        Bucket bucket = rateLimitService.resolveBucket(ip);
+
+        if (!bucket.tryConsume(1)) {
+            throw new RateLimitExceededException("Quá nhiều yêu cầu, vui lòng thử lại sau");
+        }
         return ResponseEntity.ok(authService.login(req, request, response));
     }
 

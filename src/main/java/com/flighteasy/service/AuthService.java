@@ -38,6 +38,7 @@ public class AuthService {
     private final UserAttemptService userAttemptService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final TokenBlacklistService tokenBlacklistService;
+    private final EmailService emailService;
 
     @Transactional
     public AuthResponse register(RegisterRequest req, HttpServletResponse response) {
@@ -84,7 +85,7 @@ public class AuthService {
         String newAccessToken = jwtService.generateAccessToken(newRefreshToken.getUser());
         setRefreshTokenCookie(response, newRefreshToken.getToken());
 
-        return new AuthResponse(accessToken, "Bearer", null);
+        return new AuthResponse(newAccessToken, "Bearer", null);
     }
 
     @Transactional
@@ -122,7 +123,7 @@ public class AuthService {
                     .isUsed(false)
                     .build();
             passwordResetTokenRepository.save(resetToken);
-            //emailService.sendResetEmail(user.getEmail(), resetToken.getToken());
+            emailService.sendPasswordResetEmail(user.getEmail(), resetToken.getToken());
         });
     }
 
@@ -161,7 +162,7 @@ public class AuthService {
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
-                .path("api/v1/auth")
+                .path("/api/v1/auth")
                 .maxAge(Duration.ofDays(7))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -172,7 +173,7 @@ public class AuthService {
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
-                .path("api/v1/auth")
+                .path("/api/v1/auth")
                 .maxAge(0)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

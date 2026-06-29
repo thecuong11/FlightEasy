@@ -23,7 +23,7 @@ public class PaymentReconciliationScheduler {
 
     @Scheduled(fixedDelay = 300_000)
     public void reconcilePendingPayments() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(3);
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(60);
         List<Payment> stuck = paymentRepository.findByStatusAndCreatedAtBefore(PaymentStatus.PENDING, threshold);
 
         for (Payment payment : stuck) {

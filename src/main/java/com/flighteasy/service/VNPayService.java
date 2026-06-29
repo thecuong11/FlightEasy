@@ -40,6 +40,8 @@ public class VNPayService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectMapper objectMapper;
+    private final RestTemplate vnpayRestTemplate;
 
     @Value("${vnpay.tmn-code}")
     private String tmnCode;
@@ -121,10 +123,11 @@ public class VNPayService {
 
         if ("00".equals(responseCode)) {
             payment.setStatus(PaymentStatus.SUCCESS);
+            paymentRepository.save(payment);
 
             if (payment.getBooking().getStatus() == BookingStatus.CONFIRMED) {
-                log.error("DUPLICATE PAYMENT detected for booking {} - txnRef={} needs manual refund",payment.getBooking().getPnrCode(), payment.getVnpTxnRef());
-                payment.setStatus(PaymentStatus.SUCCESS);
+                log.error("DUPLICATE IPN ignored for already-confirmed booking {} - txnRef={}",payment.getBooking().getPnrCode(), payment.getVnpTxnRef());
+                return buildIPNResponse("01", "Order already confirmed");
             }
             confirmBooking(payment.getBooking());
             eventPublisher.publishEvent(new BookingConfirmedEvent(payment.getBooking()));
@@ -143,8 +146,6 @@ public class VNPayService {
     }
 
     private boolean verifySignature(Map<String, String> params, String receivedHash) {
-        log.info("=====hashSecret===== [{}]", hashSecret);
-        log.info("===receivedHash=== [{}]", receivedHash);
         String hashData = params.entrySet().stream()
                 .filter(e -> !e.getKey().equals("vnp_SecureHash") && !e.getKey().equals("vnp_SecureHashType"))
                 .sorted(Map.Entry.comparingByKey())
@@ -152,8 +153,6 @@ public class VNPayService {
                 .collect(Collectors.joining("&"));
 
         String expectedHash = hmacSha512(hashSecret, hashData);
-        log.info("===expectedHash=== [{}]", expectedHash);
-
         return expectedHash.equals(receivedHash);
     }
 
@@ -171,7 +170,12 @@ public class VNPayService {
     }
 
     private String buildIPNResponse(String rspCode, String message) {
-        return "{\"RspCode\":\"" + rspCode + "\",\"Message\":\"" + message + "\"}";
+        try {
+            return objectMapper.writeValueAsString(Map.of("rspCode", rspCode, "message", message));
+        } catch (Exception e) {
+            return "{\"RspCode\":\"99\",\"Message\":\"Internal error\"}";
+        }
+
     }
 
     private void confirmBooking(Booking booking) {
@@ -199,12 +203,11 @@ public class VNPayService {
                 .collect(Collectors.joining("&"));
         params.put("vnp_SecureHash", hmacSha512(hashSecret, hashData));
 
-        RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(params, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, entity, Map.class);
+        ResponseEntity<Map> response = vnpayRestTemplate.postForEntity(apiUrl, entity, Map.class);
         return response.getBody();
     }
 

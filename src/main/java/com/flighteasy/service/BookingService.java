@@ -9,7 +9,7 @@ import com.flighteasy.enums.BookingStatus;
 import com.flighteasy.event.BookingCancelledEvent;
 import com.flighteasy.exception.custom.*;
 import com.flighteasy.repository.*;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -124,6 +125,7 @@ public class BookingService {
         return toBookingResponse(booking, flightClass, request);
     }
 
+    @Transactional(readOnly = true)
     public BookingResponse getBooking(String pnrCode, Long userId) {
         Booking booking = bookingRepository.findByPnrCode(pnrCode)
                 .orElseThrow(() -> new NotFoundException("Booking không tồn tại: " + pnrCode));
@@ -222,16 +224,15 @@ public class BookingService {
 
     private String generatePNR() {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        String pnr;
-        do {
+        for (int attempt = 0; attempt < 10; attempt++) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 6; i++) {
                 sb.append(chars.charAt(ThreadLocalRandom.current().nextInt(chars.length())));
             }
-            pnr = sb.toString();
-        } while (bookingRepository.existsByPnrCode(pnr));
-
-        return pnr;
+            String pnr = sb.toString();
+            if (!bookingRepository.existsByPnrCode(pnr)) return pnr;
+        }
+        throw new PnrGenerationException("Không thể tạo PNR duy nhất sau 10 lần thử");
     }
 
     private BookingResponse toBookingResponse(Booking booking, FlightClass fc, CreateBookingRequest request) {
@@ -298,10 +299,17 @@ public class BookingService {
     public void cancelBookingByAdmin(String pnrCode, String reason) {
         Booking booking = bookingRepository.findByPnrCode(pnrCode)
                 .orElseThrow(() -> new NotFoundException("Booking không tồn tại"));
+
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            booking.setRefundAmount(booking.getTotalPrice());
+        }
+
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelReason(reason);
         bookingRepository.save(booking);
+
         releaseSeatsForBooking(booking);
+        eventPublisher.publishEvent(new BookingCancelledEvent(booking));
     }
 }

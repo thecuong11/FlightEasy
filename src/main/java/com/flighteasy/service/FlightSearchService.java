@@ -11,6 +11,7 @@ import com.flighteasy.exception.custom.InvalidSearchException;
 import com.flighteasy.repository.FlightRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,18 +23,26 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class FlightSearchService {
 
     private final FlightRepository flightRepository;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final Executor searchExecutor;
 
     private static final Duration CACHE_TTL = Duration.ofMinutes(5);
+
+    public FlightSearchService(FlightRepository flightRepository, StringRedisTemplate redisTemplate, ObjectMapper objectMapper, @Qualifier("searchExecutor") Executor searchExecutor) {
+        this.flightRepository = flightRepository;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.searchExecutor = searchExecutor;
+    }
 
     public FlightSearchResponse search(FlightSearchRequest request){
         if (!request.getDepartDate().isAfter(LocalDate.now())){
@@ -102,7 +111,7 @@ public class FlightSearchService {
         returnRequest.setClassType(request.getClassType());
         returnRequest.setSortBy(request.getSortBy());
 
-        CompletableFuture<FlightSearchResponse> outboundFuture = CompletableFuture.supplyAsync(() -> search(request));
+        CompletableFuture<FlightSearchResponse> outboundFuture = CompletableFuture.supplyAsync(() -> search(request), searchExecutor);
         CompletableFuture<FlightSearchResponse> returnFuture = CompletableFuture.supplyAsync(() -> search(returnRequest));
 
         CompletableFuture.allOf(outboundFuture, returnFuture).join();
@@ -218,9 +227,9 @@ public class FlightSearchService {
                 r.getMinPrice(), r.getMaxPrice(), r.getAirlines(),
                 r.getMaxDuration(), r.getDepartTimeRange()
         ));
-        return String.format("flight-search:%s:%s:%s:%s:%d:%s:%s",
+        return String.format("flight-search:%s:%s:%s:%s:%d:%s:%s:p%d:s%d",
                 r.getFrom(), r.getTo(), r.getDepartDate(),
                 r.getClassType(), r.getTotalPassengers(),
-                r.getSortBy(), filterHash);
+                r.getSortBy(), filterHash, r.getPage(), r.getSize());
     }
 }
