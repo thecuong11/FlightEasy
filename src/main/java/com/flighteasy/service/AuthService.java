@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
+import org.springframework.security.authentication.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,7 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final TokenBlacklistService tokenBlacklistService;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional
     public AuthResponse register(RegisterRequest req, HttpServletResponse response) {
@@ -58,17 +61,32 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
-        User user = userRepository.findByEmail(req.email())
-                .orElseThrow(() -> new InvalidCredentialsException("Email hoặc mật khẩu không đúng"));
+//        User user = userRepository.findByEmail(req.email())
+//                .orElseThrow(() -> new InvalidCredentialsException("Email hoặc mật khẩu không đúng"));
+//
+//        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
+//            throw new AccountLockedException("Tài khoản bị khóa đến " + user.getLockedUntil());
+//        }
+//
+//        if (!passwordEncoder.matches(req.password(), user.getPassword())) {
+//            userAttemptService.updateFailedAttempts(user);
+//            throw new InvalidCredentialsException("Email hoặc mật khẩu không đúng");
+//        }
 
-        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
-            throw new AccountLockedException("Tài khoản bị khóa đến " + user.getLockedUntil());
-        }
-
-        if (!passwordEncoder.matches(req.password(), user.getPassword())) {
+        Authentication authResult;
+        try {
+            authResult = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(req.email(), req.password()));
+        } catch (LockedException ex) {
+            throw new AccountLockedException("Tài khoản bị khóa");
+        } catch (DisabledException ex) {
+            throw new AccountLockedException("Tài khoản bị vô hiệu hóa");
+        } catch (BadCredentialsException ex) {
+            User user = userRepository.findByEmail(req.email()).orElseThrow(() -> new InvalidCredentialsException("Email hoặc mật khẩu không đúng"));
             userAttemptService.updateFailedAttempts(user);
             throw new InvalidCredentialsException("Email hoặc mật khẩu không đúng");
         }
+
+        User user = (User) authResult.getPrincipal();
 
         user.setFailedAttempts(0);
         user.setLockedUntil(null);
