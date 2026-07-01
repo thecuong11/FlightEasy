@@ -74,7 +74,6 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest req) {
-        System.out.println("controller-reset");
         authService.resetPassword(req);
         return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công"));
     }
