@@ -50,7 +50,8 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken rotateToken(String rawToken, String accessToken) {
-        RefreshToken existing = refreshTokenRepository.findByTokenHash(rawToken)
+        String hash = TokenGenerator.hashToken(rawToken);
+        RefreshToken existing = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token không hợp lệ"));
 
         if (existing.isUsed()) {
