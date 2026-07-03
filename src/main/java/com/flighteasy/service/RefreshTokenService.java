@@ -6,6 +6,7 @@ import com.flighteasy.exception.custom.InvalidTokenException;
 import com.flighteasy.exception.custom.TokenExpiredException;
 import com.flighteasy.exception.custom.TokenReuseException;
 import com.flighteasy.repository.RefreshTokenRepository;
+import com.flighteasy.util.TokenGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,11 @@ public class RefreshTokenService {
             refreshTokenRepository.deleteOldestByUser(user);
         }
 
+        String rawToken = TokenGenerator.generateToken();
+        String hash = TokenGenerator.hashToken(rawToken);
+
         RefreshToken token = RefreshToken.builder()
-                .token(UUID.randomUUID().toString())
+                .tokenHash(hash)
                 .user(user)
                 .deviceInfo(deviceInfo)
                 .ipAddress(ip)
@@ -38,12 +42,15 @@ public class RefreshTokenService {
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .build();
 
-        return refreshTokenRepository.save(token);
+        refreshTokenRepository.save(token);
+        token.setRawTokenForResponse(rawToken);
+
+        return token;
     }
 
     @Transactional
     public RefreshToken rotateToken(String rawToken, String accessToken) {
-        RefreshToken existing = refreshTokenRepository.findByToken(rawToken)
+        RefreshToken existing = refreshTokenRepository.findByTokenHash(rawToken)
                 .orElseThrow(() -> new InvalidTokenException("Refresh token không hợp lệ"));
 
         if (existing.isUsed()) {

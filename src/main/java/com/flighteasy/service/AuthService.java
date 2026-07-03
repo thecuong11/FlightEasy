@@ -61,17 +61,6 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
-//        User user = userRepository.findByEmail(req.email())
-//                .orElseThrow(() -> new InvalidCredentialsException("Email hoặc mật khẩu không đúng"));
-//
-//        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(LocalDateTime.now())) {
-//            throw new AccountLockedException("Tài khoản bị khóa đến " + user.getLockedUntil());
-//        }
-//
-//        if (!passwordEncoder.matches(req.password(), user.getPassword())) {
-//            userAttemptService.updateFailedAttempts(user);
-//            throw new InvalidCredentialsException("Email hoặc mật khẩu không đúng");
-//        }
 
         Authentication authResult;
         try {
@@ -101,7 +90,7 @@ public class AuthService {
     public AuthResponse refresh(String rawToken, String accessToken , HttpServletResponse response) {
         RefreshToken newRefreshToken = refreshTokenService.rotateToken(rawToken, accessToken);
         String newAccessToken = jwtService.generateAccessToken(newRefreshToken.getUser());
-        setRefreshTokenCookie(response, newRefreshToken.getToken());
+        setRefreshTokenCookie(response, newRefreshToken.getRawTokenForResponse());
 
         return new AuthResponse(newAccessToken, "Bearer", null);
     }
@@ -118,7 +107,7 @@ public class AuthService {
             }
         }
 
-        refreshTokenRepository.findByToken(rawRefreshToken).ifPresent(t -> {
+        refreshTokenRepository.findByTokenHash(rawRefreshToken).ifPresent(t -> {
             t.setUsed(true);
             refreshTokenRepository.save(t);
         });
@@ -170,7 +159,7 @@ public class AuthService {
     private AuthResponse buildAuthResponse(User user, String deviceInfo, String ip, HttpServletResponse response) {
         String accessToken = jwtService.generateAccessToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, deviceInfo, ip);
-        setRefreshTokenCookie(response, refreshToken.getToken());
+        setRefreshTokenCookie(response, refreshToken.getRawTokenForResponse());
 
         return new AuthResponse(accessToken, "Bearer", new AuthResponse.UserInfo(user.getId(), user.getEmail(), user.getFullName(), user.getRole()));
     }
@@ -196,6 +185,4 @@ public class AuthService {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
-
-
 }
