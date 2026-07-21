@@ -1,7 +1,7 @@
 package com.flighteasy.aspect;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flighteasy.entity.AdminAuditLog;
+import com.flighteasy.entity.User;
 import com.flighteasy.repository.AdminAuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,6 @@ public class AdminAuditAspect {
 
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final HttpServletRequest httpRequest;
-    private final ObjectMapper objectMapper;
 
     @AfterReturning(
             pointcut = "execution(* com.flighteasy.controller.AdminController.*(..))",
@@ -32,19 +31,19 @@ public class AdminAuditAspect {
     public void logAdminAction(JoinPoint joinPoint, Object result) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null) return;
+            if (auth == null || !(auth.getPrincipal() instanceof User admin)) return;
 
-            String adminEmail = auth.getName();
             String methodName = joinPoint.getSignature().getName();
 
             AdminAuditLog auditLog = AdminAuditLog.builder()
+                    .admin(admin)
                     .action(methodName)
                     .ipAddress(getClientIp())
                     .createdAt(LocalDateTime.now())
                     .build();
 
             adminAuditLogRepository.save(auditLog);
-            log.info("Admin action logged: {} by {}", methodName, adminEmail);
+            log.info("Admin action logged: {} by {}", methodName, admin.getEmail());
 
         } catch (Exception e) {
             log.error("Failed to save audit log: {}", e.getMessage());
