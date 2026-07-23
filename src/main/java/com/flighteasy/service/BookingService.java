@@ -7,6 +7,7 @@ import com.flighteasy.dto.PassengerRequest;
 import com.flighteasy.entity.*;
 import com.flighteasy.enums.BookingStatus;
 import com.flighteasy.event.BookingCancelledEvent;
+import com.flighteasy.event.FlightCancelledEvent;
 import com.flighteasy.exception.custom.*;
 import com.flighteasy.repository.*;
 
@@ -311,5 +312,25 @@ public class BookingService {
 
         releaseSeatsForBooking(booking);
         eventPublisher.publishEvent(new BookingCancelledEvent(booking));
+    }
+
+    @Transactional
+    public void cancelBookingsForCancelledFlight(Flight flight) {
+        List<Booking> affected = bookingRepository.findConfirmedBookingsByFlightId(flight.getId());
+
+        for (Booking booking : affected) {
+            booking.setStatus(BookingStatus.CANCELLED);
+            booking.setCancelledAt(LocalDateTime.now());
+            booking.setCancelReason("Chuyến bay " + flight.getFlightNumber() + " đã bị hãng hủy");
+            booking.setRefundAmount(booking.getTotalPrice());
+            bookingRepository.save(booking);
+
+            releaseSeatsForBooking(booking);
+        }
+
+        log.info("Flight {} cancelled: auto-cancelled {} confirmed bookings", flight.getFlightNumber(), affected.size());
+
+        // Publish 1 event riêng mang theo cả danh sách booking, để listener gửi email + (sau này) trigger refund thật
+        eventPublisher.publishEvent(new FlightCancelledEvent(flight, affected));
     }
 }

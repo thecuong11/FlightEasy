@@ -147,4 +147,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
+
+    @Query("""
+    SELECT DISTINCT b FROM Booking b
+    LEFT JOIN FETCH b.segments s
+    LEFT JOIN FETCH s.passengers p
+    LEFT JOIN FETCH p.seat
+    LEFT JOIN FETCH s.flightClass fc
+    LEFT JOIN FETCH fc.flight
+    WHERE fc.flight.id = :flightId
+    AND b.status = 'CONFIRMED'
+""")
+    List<Booking> findConfirmedBookingsByFlightId(@Param("flightId") Long flightId);
 }

@@ -231,4 +231,25 @@ public class EmailService {
                 .toList();
     }
 
+    @Async("emailTaskExecutor")
+    public void sendFlightCancellationNotification(Flight flight, List<Booking> affectedBookings) {
+        affectedBookings.forEach(booking -> {
+            Context context = new Context();
+            context.setVariable("pnrCode", booking.getPnrCode());
+            context.setVariable("flightNumber", flight.getFlightNumber());
+            context.setVariable("from", getOriginName(booking));
+            context.setVariable("to", getDestinationName(booking));
+            context.setVariable("departureTime", getDepartureTime(booking));
+            context.setVariable("refundAmount", formatCurrency(booking.getRefundAmount()));
+
+            sendEmail(
+                    booking.getContactEmail(),
+                    "🛑 Chuyến bay " + flight.getFlightNumber() + " đã bị hủy - " + booking.getPnrCode(),
+                    "flight-cancelled",
+                    context,
+                    booking.getPnrCode()
+            );
+        });
+    }
+
 }

@@ -40,6 +40,7 @@ public class FlightService {
     private final AirlineRepository airlineRepository;
     private final AircraftTypeRepository aircraftTypeRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final BookingService bookingService;
 
     public List<Airport> getAllAirport(){
         return airportRepository.findByIsActiveTrue();
@@ -139,7 +140,7 @@ public class FlightService {
         flightRepository.save(flight);
 
         if (request.status() == FlightStatus.CANCELLED){
-            eventPublisher.publishEvent(new FlightCancelledEvent(flight));
+            bookingService.cancelBookingsForCancelledFlight(flight);
         }
     }
 

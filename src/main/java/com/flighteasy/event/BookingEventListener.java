@@ -40,9 +40,4 @@ public class BookingEventListener {
         emailService.sendBookingCancellation(event.getBooking());
     }
 
-    @EventListener
-    @Async("emailTaskExecutor")
-    public void onFlightCancelled(FlightCancelledEvent event) {
-        log.info("Flight {} cancelled - sending notifications", event.getFlight().getFlightNumber());
-    }
 }
